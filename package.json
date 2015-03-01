@@ -11,8 +11,9 @@
     "debug": "~2.1.1",
     "express": "~4.12.0",
     "hbs": "~2.8.0",
+    "matchengine": "0.0.4",
+    "mongoose": "^3.8.24",
     "morgan": "~1.5.1",
-    "serve-favicon": "~2.2.0",
-    "matchengine": "0.0.4"
+    "serve-favicon": "~2.2.0"
   }
 }
