@@ -1,3 +1,5 @@
+var mongoose = require("mongoose");
+var unzip = require("unzip");
 var express = require("express");
 var router = express.Router();
 
@@ -6,7 +8,8 @@ var ME = require("matchengine")({
     password: process.env.ME_PASSWORD
 });
 
-var unzip = require("unzip");
+var Job = mongoose.model("Job");
+var Image = mongoose.model("Image");
 
 /* POST new upload */
 router.get("/new", function(req, res, next) {
@@ -32,8 +35,15 @@ router.get("/new", function(req, res, next) {
             })
             .on("close", function() {
                 // TODO: Start job
-                // Use files array
-                res.render("index", { title: "Express" });
+                Job.create({
+                    state: "uploaded",
+                    imageCount: files.length,
+                    uploadDate: new Date(),
+                    iamges: []
+                }, function() {
+                    // Use files array
+                    res.render("index", { title: "Express" });
+                });
             });
     });
 });
