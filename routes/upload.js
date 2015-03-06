@@ -15,11 +15,10 @@ var Image = mongoose.model("Image");
 router.get("/new", function(req, res, next) {
     req.pipe(req.busboy);
 
-    var jobID = 1234;
     var jobDir = "./";
     var files = [];
 
-    req.busboy.on("file", function(field, file, fileName) {
+    req.busboy.on("file", function(field, file, zipName) {
         file
             .pipe(unzip.Extract())
             .on("entry", function(entry) {
@@ -36,6 +35,7 @@ router.get("/new", function(req, res, next) {
             .on("close", function() {
                 // TODO: Start job
                 Job.create({
+                    _id: zipName,
                     state: "uploaded",
                     imageCount: files.length,
                     uploadDate: new Date(),
