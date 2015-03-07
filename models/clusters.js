@@ -1,7 +1,7 @@
 var mongoose = require("mongoose");
 
 mongoose.model("Cluster", {
-    jobId: mongoose.types.ObjectId,
-    images: [mongoose.types.ObjectId],
+    jobId: String,
+    images: [String],
     processed: Boolean
 });

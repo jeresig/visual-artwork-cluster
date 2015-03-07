@@ -19,6 +19,13 @@ router.get("/new", function(req, res, next) {
     var files = [];
 
     req.busboy.on("file", function(field, file, zipName) {
+        if (!/\.zip$/i.test(zipName)) {
+            res.render("error", {message: "Uploaded file is not a zip file."});
+            return;
+        }
+
+        var jobName = zipName.replace(/\.zip$/i, "");
+
         file
             .pipe(unzip.Extract())
             .on("entry", function(entry) {
@@ -32,15 +39,30 @@ router.get("/new", function(req, res, next) {
                     entry.autodrain();
                 }
             })
-            .on("close", function() {
+            .on("error", function(err) {
+                throw err;
+            })
+            .on("close", function(err) {
+                if (err) {
+                    res.render("error", {message: "Error opening zip file."});
+                    return;
+                }
+
                 // TODO: Start job
                 Job.create({
-                    _id: zipName,
+                    _id: jobName,
                     state: "uploaded",
                     imageCount: files.length,
                     uploadDate: new Date(),
-                    iamges: []
-                }, function() {
+                    images: []
+                }, function(err) {
+                    if (err) {
+                        // Maybe file already uploaded?
+                        res.render("error", {message:
+                            "Zip file with this name was already uploaded."});
+                        return;
+                    }
+
                     // Use files array
                     res.render("index", { title: "Express" });
                 });

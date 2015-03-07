@@ -1,7 +1,8 @@
 var mongoose = require("mongoose");
 
 mongoose.model("Image", {
-    jobId: mongoose.types.ObjectId,
+    _id: String,
+    jobId: String,
     clusterId: mongoose.types.ObjectId,
     fileName: String
 });
