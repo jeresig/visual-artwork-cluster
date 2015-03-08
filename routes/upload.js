@@ -1,3 +1,6 @@
+var path = require("path");
+
+var async = require("async");
 var mongoose = require("mongoose");
 var unzip = require("unzip");
 var express = require("express");
@@ -29,12 +32,14 @@ router.get("/new", function(req, res, next) {
         file
             .pipe(unzip.Extract())
             .on("entry", function(entry) {
-                var fileName = entry.path;
+                var filePath = entry.path;
                 var type = entry.type; // Directory or File
 
-                if (type === "File" && /\.jpe?g$/i.test(fileName)) {
+                if (type === "File" && /([^\/\\]+)\.jpe?g$/i.test(filePath)) {
+                    var fileName = RegExp.$1;
                     files.push(fileName);
-                    entry.pipe(fs.createWriteStream(fileName));
+                    entry.pipe(fs.createWriteStream(
+                        path.join(jobDir, fileName + ".jpg")));
                 } else {
                     entry.autodrain();
                 }
@@ -48,14 +53,13 @@ router.get("/new", function(req, res, next) {
                     return;
                 }
 
-                // TODO: Start job
                 Job.create({
                     _id: jobName,
                     state: "uploaded",
                     imageCount: files.length,
                     uploadDate: new Date(),
-                    images: []
-                }, function(err) {
+                    images: files
+                }, function(err, job) {
                     if (err) {
                         // Maybe file already uploaded?
                         res.render("error", {message:
@@ -63,8 +67,17 @@ router.get("/new", function(req, res, next) {
                         return;
                     }
 
-                    // Use files array
-                    res.render("index", { title: "Express" });
+                    async.eachLimit(files, 1, function(fileName, callback) {
+                        Image.create({
+                            _id: fileName,
+                            jobId: job._id,
+                            fileName: fileName,
+                            state: "uploaded"
+                        }, callback);
+                    }, function() {
+                        // Use files array
+                        res.render("index", { title: "Express" });
+                    });
                 });
             });
     });

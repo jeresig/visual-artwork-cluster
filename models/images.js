@@ -4,5 +4,6 @@ mongoose.model("Image", {
     _id: String,
     jobId: String,
     clusterId: mongoose.types.ObjectId,
-    fileName: String
+    fileName: String,
+    state: String
 });
