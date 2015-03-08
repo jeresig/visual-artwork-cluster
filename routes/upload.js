@@ -1,3 +1,4 @@
+var fs = require("fs");
 var path = require("path");
 
 var async = require("async");
@@ -20,11 +21,13 @@ router.get("/new", function(req, res, next) {
 
     var jobDir = "./";
     var files = [];
+    var existingFiles = [];
 
     req.busboy.on("file", function(field, file, zipName) {
         if (!/\.zip$/i.test(zipName)) {
-            res.render("error", {message: "Uploaded file is not a zip file."});
-            return;
+            return res.render("error", {
+                message: "Uploaded file is not a zip file."
+            });
         }
 
         var jobName = zipName.replace(/\.zip$/i, "");
@@ -37,9 +40,17 @@ router.get("/new", function(req, res, next) {
 
                 if (type === "File" && /([^\/\\]+)\.jpe?g$/i.test(filePath)) {
                     var fileName = RegExp.$1;
-                    files.push(fileName);
-                    entry.pipe(fs.createWriteStream(
-                        path.join(jobDir, fileName + ".jpg")));
+                    var outFileName = path.join(jobDir, fileName + ".jpg");
+
+                    fs.exists(outFileName, function(exists) {
+                        if (exists) {
+                            existingFiles.push(fileName);
+                            return entry.autodrain();
+                        }
+
+                        files.push(fileName);
+                        entry.pipe(fs.createWriteStream(outFileName));
+                    });
                 } else {
                     entry.autodrain();
                 }
@@ -49,8 +60,9 @@ router.get("/new", function(req, res, next) {
             })
             .on("close", function(err) {
                 if (err) {
-                    res.render("error", {message: "Error opening zip file."});
-                    return;
+                    return res.render("error", {
+                        message: "Error opening zip file."
+                    });
                 }
 
                 Job.create({
@@ -62,9 +74,10 @@ router.get("/new", function(req, res, next) {
                 }, function(err, job) {
                     if (err) {
                         // Maybe file already uploaded?
-                        res.render("error", {message:
-                            "Zip file with this name was already uploaded."});
-                        return;
+                        return res.render("error", {
+                            message:
+                                "Zip file with this name was already uploaded."
+                        });
                     }
 
                     async.eachLimit(files, 1, function(fileName, callback) {
@@ -76,7 +89,11 @@ router.get("/new", function(req, res, next) {
                         }, callback);
                     }, function() {
                         // Use files array
-                        res.render("index", { title: "Express" });
+                        res.render("index", {
+                            title: "Upload Completed",
+                            message: "",
+                            existingFiles: existingFiles
+                        });
                     });
                 });
             });
