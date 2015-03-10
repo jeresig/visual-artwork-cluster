@@ -1,7 +1,9 @@
 <h1>Upload Complete</h1>
 
+<p>The upload will take some time to process. You can track its progress on the <a href="/">home page</a>.</p>
+
 {{#if existingFiles}}
-    <p>The following files already existed and were not uploaded:</p>
+    <p>The following files were already uploaded and thus were not re-imported:</p>
     <ul>
     {{#each existingFiles}}
         <li>{{this}}</li>
