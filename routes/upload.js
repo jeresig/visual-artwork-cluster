@@ -89,7 +89,7 @@ router.get("/new", function(req, res, next) {
                         }, callback);
                     }, function() {
                         // Use files array
-                        res.render("index", {
+                        res.render("complete", {
                             title: "Upload Completed",
                             message: "",
                             existingFiles: existingFiles

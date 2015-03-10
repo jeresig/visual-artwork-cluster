@@ -1,0 +1,10 @@
+<h1>Upload Complete</h1>
+
+{{#if existingFiles}}
+    <p>The following files already existed and were not uploaded:</p>
+    <ul>
+    {{#each existingFiles}}
+        <li>{{this}}</li>
+    {{/each}}
+    </ul>
+{{/if}}
