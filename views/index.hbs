@@ -1,2 +1,15 @@
 <h1>{{title}}</h1>
-<p>Welcome to {{title}}</p>
+
+<form action="/upload/new" method="POST">
+    <input type="file" name="zipFile"/>
+    <button type="submit">Upload</button>
+</form>
+
+{{#if jobs}}
+    <h2>Jobs</h2>
+    <ul>
+    {{#each jobs}}
+        <li><a href="/job/{{this._id}}">{{this._id}} ({{this.imageCount}} images)</a></li>
+    {{/each}}
+    </ul>
+{{/if}}
