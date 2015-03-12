@@ -1,0 +1,14 @@
+<h1>Job: {{job._id}} ({{job.imageCount}} images)</h1>
+
+<ul>
+{{#each clusters}}
+    <li class="cluster">
+    {{#each job.images}}
+        <div class="image">
+            <img src="{{url}}"/>
+            <div class="caption">{{fileName}}</div>
+        </div>
+    {{/each}}
+    </li>
+{{/each}}
+</ul>
