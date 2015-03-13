@@ -21,6 +21,11 @@ app.use(busboy());
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
+// Load in models
+require("./models/jobs");
+require("./models/clusters");
+require("./models/images");
+
 var routes = require("./routes/index");
 var upload = require("./routes/upload");
 
