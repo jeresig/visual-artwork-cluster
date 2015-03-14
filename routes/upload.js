@@ -4,13 +4,18 @@ var path = require("path");
 var async = require("async");
 var mongoose = require("mongoose");
 var unzip = require("unzip");
+var matchengine = require("matchengine");
 var express = require("express");
 var router = express.Router();
 
-var ME = require("matchengine")({
-    username: process.env.ME_USER,
-    password: process.env.ME_PASSWORD
-});
+var ME;
+
+if (process.env.ME_USER) {
+    ME = matchengine({
+        username: process.env.ME_USER,
+        password: process.env.ME_PASSWORD
+    });
+}
 
 var Job = mongoose.model("Job");
 var Image = mongoose.model("Image");
