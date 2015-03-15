@@ -3,7 +3,7 @@ var path = require("path");
 
 var async = require("async");
 var mongoose = require("mongoose");
-var unzip = require("unzip");
+var unzip = require("unzip2");
 var matchengine = require("matchengine");
 var express = require("express");
 var router = express.Router();
@@ -21,9 +21,7 @@ var Job = mongoose.model("Job");
 var Image = mongoose.model("Image");
 
 /* POST new upload */
-router.get("/new", function(req, res, next) {
-    req.pipe(req.busboy);
-
+router.post("/new", function(req, res, next) {
     var jobDir = "./";
     var files = [];
     var existingFiles = [];
@@ -38,27 +36,32 @@ router.get("/new", function(req, res, next) {
         var jobName = zipName.replace(/\.zip$/i, "");
 
         file
-            .pipe(unzip.Extract())
+            .pipe(unzip.Parse())
             .on("entry", function(entry) {
                 var filePath = entry.path;
                 var type = entry.type; // Directory or File
 
-                if (type === "File" && /([^\/\\]+)\.jpe?g$/i.test(filePath)) {
-                    var fileName = RegExp.$1;
-                    var outFileName = path.join(jobDir, fileName + ".jpg");
-
-                    fs.exists(outFileName, function(exists) {
-                        if (exists) {
-                            existingFiles.push(fileName);
-                            return entry.autodrain();
-                        }
-
-                        files.push(fileName);
-                        entry.pipe(fs.createWriteStream(outFileName));
-                    });
-                } else {
-                    entry.autodrain();
+                // Ignore things that aren't files (e.g. directories)
+                // Ignore files that don't end with .jpe?g
+                // Ignore files that start with '.'
+                if (type !== "File" || !/([^\/\\]+)\.jpe?g$/i.test(filePath) ||
+                        fileName.indexOf(".") === 0) {
+                    return entry.autodrain();
                 }
+
+                var fileName = RegExp.$1;
+                var outFileName = path.join(jobDir, fileName + ".jpg");
+
+                fs.exists(outFileName, function(exists) {
+                    // Don't attempt to add files that already exist
+                    if (exists) {
+                        existingFiles.push(fileName);
+                        return entry.autodrain();
+                    }
+
+                    files.push(fileName);
+                    entry.pipe(fs.createWriteStream(outFileName));
+                });
             })
             .on("error", function(err) {
                 throw err;
@@ -103,6 +106,8 @@ router.get("/new", function(req, res, next) {
                 });
             });
     });
+
+    req.pipe(req.busboy);
 });
 
 module.exports = router;
