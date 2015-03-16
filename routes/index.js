@@ -14,14 +14,4 @@ router.get("/", function(req, res, next) {
     });
 });
 
-router.post("/jobs/:jobName", function(req, res, next) {
-    Job.findById(req.params.jobName)
-        .populate("images")
-        .exec(function(err, job) {
-            res.render("job", {
-                job: job
-            });
-        });
-});
-
 module.exports = router;

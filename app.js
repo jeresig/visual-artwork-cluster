@@ -1,9 +1,10 @@
-var express = require("express");
 var path = require("path");
+
+require("dotenv").load();
+
+var express = require("express");
 var favicon = require("serve-favicon");
 var logger = require("morgan");
-var cookieParser = require("cookie-parser");
-//var bodyParser = require("body-parser");
 var busboy = require("connect-busboy");
 var mongoose = require("mongoose");
 
@@ -17,9 +18,6 @@ app.set("view engine", "hbs");
 //app.use(favicon(__dirname + "/public/favicon.ico"));
 app.use(logger("dev"));
 app.use(busboy());
-//app.use(bodyParser.json());
-//app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
 // Connect to database
@@ -31,10 +29,12 @@ require("./models/clusters");
 require("./models/images");
 
 var routes = require("./routes/index");
-var upload = require("./routes/upload");
+var jobs = require("./routes/jobs");
 
 app.use("/", routes);
-app.use("/upload", upload);
+app.use("/job", jobs);
+app.use("/images", express.static(
+    path.join(__dirname, process.env.UPLOAD_DIR)));
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

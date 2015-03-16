@@ -4,25 +4,26 @@ var path = require("path");
 var async = require("async");
 var mongoose = require("mongoose");
 var unzip = require("unzip2");
-var matchengine = require("matchengine");
 var express = require("express");
 var router = express.Router();
-
-var ME;
-
-if (process.env.ME_USER) {
-    ME = matchengine({
-        username: process.env.ME_USER,
-        password: process.env.ME_PASSWORD
-    });
-}
 
 var Job = mongoose.model("Job");
 var Image = mongoose.model("Image");
 
+/* GET job */
+router.get("/:jobName", function(req, res, next) {
+    Job.findById(req.params.jobName)
+        .populate("images")
+        .exec(function(err, job) {
+            res.render("job", {
+                job: job
+            });
+        });
+});
+
 /* POST new upload */
 router.post("/new", function(req, res, next) {
-    var jobDir = "./";
+    var uploadDir = process.env.UPLOAD_DIR;
     var files = [];
     var existingFiles = [];
 
@@ -45,12 +46,12 @@ router.post("/new", function(req, res, next) {
                 // Ignore files that don't end with .jpe?g
                 // Ignore files that start with '.'
                 if (type !== "File" || !/([^\/\\]+)\.jpe?g$/i.test(filePath) ||
-                        fileName.indexOf(".") === 0) {
+                        RegExp.$1.indexOf(".") === 0) {
                     return entry.autodrain();
                 }
 
                 var fileName = RegExp.$1;
-                var outFileName = path.join(jobDir, fileName + ".jpg");
+                var outFileName = path.join(uploadDir, fileName + ".jpg");
 
                 fs.exists(outFileName, function(exists) {
                     // Don't attempt to add files that already exist
