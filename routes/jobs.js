@@ -41,16 +41,15 @@ router.post("/new", function(req, res, next) {
             .on("entry", function(entry) {
                 var filePath = entry.path;
                 var type = entry.type; // Directory or File
+                var fileName = (/([^\/\\]+)\.jpe?g$/i.exec(filePath) || [])[1] || "";
 
                 // Ignore things that aren't files (e.g. directories)
                 // Ignore files that don't end with .jpe?g
                 // Ignore files that start with '.'
-                if (type !== "File" || !/([^\/\\]+)\.jpe?g$/i.test(filePath) ||
-                        RegExp.$1.indexOf(".") === 0) {
+                if (type !== "File" || !fileName || fileName.indexOf(".") === 0) {
                     return entry.autodrain();
                 }
 
-                var fileName = RegExp.$1;
                 var outFileName = path.join(uploadDir, fileName + ".jpg");
 
                 fs.exists(outFileName, function(exists) {

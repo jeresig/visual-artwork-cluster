@@ -1,30 +1,11 @@
 
+# Installation
 
+- Make a directory for the files to be uploaded to.
+- Make a configuration file named '.env' inside this directory.
 
-Jobs:
+The configuration file should look like this:
 
- - id
- - state
- - imageCount
- - uploadDate
- - ip address
- - images: Array
-
-States:
-
- - Uploading to ME
- - Waiting on ME processing
- - Getting results
- - Completed
-
-Images:
-
- - jobID
- - clusterID
- - File Name: String
-
-Clusters:
-
- - jobID
- - images: Array
- - completed: Boolean
+    MATCHENGINE_USER=myusername
+    MATCHENGINE=PASSWORD=mypassword
+    UPLOAD_DIR=/my/dir
