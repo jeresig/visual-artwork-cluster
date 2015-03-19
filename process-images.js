@@ -63,12 +63,72 @@ var cmds = {
     },
 
     "uploaded-me": function(job, callback) {
-        // TODO: Download relationship data
-        // TODO: Do clustering on the data
-        // TODO: Build clusters
+        var clusters = [];
+        var clusterMap = {};
 
-        job.state = "completed";
-        callback();
+        console.log("Downloading similarity data...");
+
+        // Download similarity data
+        async.eachLimit(job.images, 4, function(image, callback) {
+            var ME_DIR = process.env.ME_DIR;
+            var filePath = ME_DIR + "/" + image._id + ".jpg";
+
+            ME.similar(filePath, function(err, matches) {
+                var curCluster;
+
+                matches = matches.map(function(match) {
+                    // If some other file was matched we just ignore it
+                    if (match.filepath.indexOf(ME_DIR) !== 0) {
+                        return;
+                    }
+
+                    var fileName = /([^\/]+)\.jpg$/.exec(match.filepath)[1];
+
+                    if (fileName in clusterMap) {
+                        if (curCluster && curCluster !== clusterMap[fileName]) {
+                            console.error("Multiple clusters found!");
+                        }
+
+                        curCluster = clusterMap[fileName];
+                    }
+
+                    return fileName;
+                }).filter(function(fileName) {
+                    return !!fileName;
+                });
+
+                matches.forEach(function(fileName) {
+                    if (!curCluster) {
+                        curCluster = new Cluster({
+                            jobId: image.jobId,
+                            imageCount: 0
+                        });
+
+                        clusters.push(curCluster);
+                        clusterMap[fileName] = curCluster;
+                    }
+
+                    if (curCluster.images.indexOf(fileName) < 0) {
+                        curCluster.images.push(fileName);
+                        curCluster.imageCount += 1;
+                    }
+                });
+
+                callback();
+            });
+        }, function() {
+            // Save all clusters
+            async.eachLimit(clusters, 4, function(cluster, callback) {
+                cluster.save(callback);
+                callback();
+            }, function() {
+                job.clusters = clusters.map(function(cluster) {
+                    return cluster._id;
+                });
+                job.state = "completed";
+                callback();
+            });
+        });
     }
 };
 

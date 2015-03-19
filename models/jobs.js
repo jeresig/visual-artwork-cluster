@@ -13,5 +13,6 @@ mongoose.model("Job", {
     uploadDate: Date,
     uploadIP: String,
     images: [{type: String, ref: "Image"}],
-    clusters: [{type: mongoose.Schema.Types.ObjectId, ref: "Cluster"}]
+    clusters: [{type: mongoose.Schema.Types.ObjectId, ref: "Cluster"}],
+    processed: Boolean
 });
