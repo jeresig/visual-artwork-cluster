@@ -4,10 +4,8 @@ mongoose.model("Job", {
     _id: String,
     /* States:
      * - uploaded
-     * - uploading-me
      * - uploaded-me
-     * - clustering
-     * - ready
+     * - completed
      */
     state: String,
     inProgress: Boolean,

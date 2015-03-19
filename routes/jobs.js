@@ -78,6 +78,7 @@ router.post("/new", function(req, res, next) {
                     state: "uploaded",
                     imageCount: files.length,
                     uploadDate: new Date(),
+                    inProgress: false,
                     images: files
                 }, function(err, job) {
                     if (err) {
