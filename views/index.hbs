@@ -9,7 +9,11 @@
     <h2>Jobs</h2>
     <ul>
     {{#each jobs}}
+        {{#if this.completed}}
         <li><a href="/job/{{this._id}}">{{this._id}} ({{this.imageCount}} images)</a></li>
+        {{#else}}
+        <li>{{this._id}} ({{this.imageCount}} images) (Processing...)</li>
+        {{/if}}
     {{/each}}
     </ul>
 {{/if}}
