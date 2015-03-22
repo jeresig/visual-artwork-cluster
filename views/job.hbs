@@ -11,13 +11,22 @@
 
 <ul>
 {{#each clusters}}
-    <li class="cluster">
+    <li class="cluster {{#if this.processed}}processed{{/if}}">
     {{#each this.images}}
         <div class="image">
             <img src="{{url}}"/>
             <div class="caption">{{fileName}}</div>
         </div>
     {{/each}}
+    <div class="process">
+    {{#if this.processed}}
+        <span class="processed">Already processed.</span>
+    {{else}}
+        <form action="/jobs/{{../job._id}}/process/{{this._id}}" method="POST">
+            <button type="submit">Make as Processed</button>
+        </form>
+    {{/if}}
+    </div>
     </li>
 {{/each}}
 </ul>

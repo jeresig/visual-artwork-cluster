@@ -9,6 +9,7 @@ var router = express.Router();
 
 var Job = mongoose.model("Job");
 var Image = mongoose.model("Image");
+var Cluster = mongoose.model("Cluster");
 
 /* GET job */
 router.get("/:jobName", function(req, res, next) {
@@ -109,6 +110,24 @@ router.post("/new", function(req, res, next) {
     });
 
     req.pipe(req.busboy);
+});
+
+/* POST process cluster */
+router.post("/:jobName/process/:clusterId", function(req, res, next) {
+    Cluster.findByIdAndUpdate(req.params.clusterId, {processed: true})
+        .exec(function(err, cluster) {
+            Cluster.count({jobId: req.params.jobName, processed: false},
+                function(err, count) {
+                    if (count === 0) {
+                        Job.findByIdAndUpdate(req.params.jobName,
+                            {processed: true}, function() {
+                                res.redirect("/:jobName");
+                            });
+                    } else {
+                        res.redirect("/:jobName");
+                    }
+                });
+        });
 });
 
 module.exports = router;
