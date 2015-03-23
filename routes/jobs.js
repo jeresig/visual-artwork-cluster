@@ -16,8 +16,21 @@ router.get("/:jobName", function(req, res, next) {
     Job.findById(req.params.jobName)
         .populate("images")
         .exec(function(err, job) {
+            // Moved processed clusters to the bottom
+            var clusters = [];
+            var processedClusters [];
+
+            job.clusters.forEach(function(cluster) {
+                if (cluster.processed) {
+                    processedClusters.push(cluster);
+                } else {
+                    clusters.push(cluster);
+                }
+            });
+
             res.render("job", {
-                job: job
+                job: job,
+                clusters: clusters.concat(processedClusters)
             });
         });
 });

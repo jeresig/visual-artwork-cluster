@@ -7,7 +7,6 @@ var Job = mongoose.model("Job");
 /* GET home page. */
 router.get("/", function(req, res, next) {
     Job.find().lean().exec(function(err, jobs) {
-
         jobs.forEach(function(job) {
             job.completed = job.state === "completed";
         });

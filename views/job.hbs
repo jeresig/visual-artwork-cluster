@@ -1,5 +1,9 @@
 <h1>Job: {{job._id}} ({{job.imageCount}} images)</h1>
 
+{{#if job.processed}}
+    <p class="processed">Entire job has been processed.</p>
+{{/if}}
+
 <ul>
 {{#each job.images}}
     <li class="image">
@@ -20,7 +24,7 @@
     {{/each}}
     <div class="process">
     {{#if this.processed}}
-        <span class="processed">Already processed.</span>
+        <span class="processed">(Already processed.)</span>
     {{else}}
         <form action="/jobs/{{../job._id}}/process/{{this._id}}" method="POST">
             <button type="submit">Make as Processed</button>
