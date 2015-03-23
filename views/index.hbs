@@ -11,7 +11,7 @@
     {{#each jobs}}
         {{#if this.completed}}
         <li class="{{#if this.processed}}processed{{/if}}"><a href="/job/{{this._id}}">{{this._id}} ({{this.imageCount}} images)</a></li>
-        {{#else}}
+        {{else}}
         <li>{{this._id}} ({{this.imageCount}} images) (Processing...)</li>
         {{/if}}
     {{/each}}

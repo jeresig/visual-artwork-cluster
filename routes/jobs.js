@@ -18,7 +18,7 @@ router.get("/:jobName", function(req, res, next) {
         .exec(function(err, job) {
             // Moved processed clusters to the bottom
             var clusters = [];
-            var processedClusters [];
+            var processedClusters = [];
 
             job.clusters.forEach(function(cluster) {
                 if (cluster.processed) {
