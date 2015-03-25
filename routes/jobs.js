@@ -14,23 +14,27 @@ var Cluster = mongoose.model("Cluster");
 /* GET job */
 router.get("/:jobName", function(req, res, next) {
     Job.findById(req.params.jobName)
-        .populate("images")
+        .populate("clusters")
         .exec(function(err, job) {
             // Moved processed clusters to the bottom
             var clusters = [];
             var processedClusters = [];
 
-            job.clusters.forEach(function(cluster) {
-                if (cluster.processed) {
-                    processedClusters.push(cluster);
-                } else {
-                    clusters.push(cluster);
-                }
-            });
-
-            res.render("job", {
-                job: job,
-                clusters: clusters.concat(processedClusters)
+            // Need to do a second populate() to bring in the images
+            async.eachLimit(job.clusters, 1, function(cluster, callback) {
+                cluster.populate("images", function() {
+                    if (cluster.processed) {
+                        processedClusters.push(cluster);
+                    } else {
+                        clusters.push(cluster);
+                    }
+                    callback();
+                });
+            }, function() {
+                res.render("job", {
+                    job: job,
+                    clusters: clusters.concat(processedClusters)
+                });
             });
         });
 });
