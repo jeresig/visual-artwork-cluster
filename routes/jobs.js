@@ -131,17 +131,20 @@ router.post("/new", function(req, res, next) {
 
 /* POST process cluster */
 router.post("/:jobName/process/:clusterId", function(req, res, next) {
-    Cluster.findByIdAndUpdate(req.params.clusterId, {processed: true})
+    var clusterId = req.params.clusterId;
+    var jobName = req.params.jobName;
+
+    Cluster.findByIdAndUpdate(clusterId, {processed: true})
         .exec(function(err, cluster) {
-            Cluster.count({jobId: req.params.jobName, processed: false},
+            Cluster.count({jobId: jobName, processed: {$ne: true}},
                 function(err, count) {
                     if (count === 0) {
                         Job.findByIdAndUpdate(req.params.jobName,
                             {processed: true}, function() {
-                                res.redirect("/:jobName");
+                                res.redirect("/job/" + jobName);
                             });
                     } else {
-                        res.redirect("/:jobName");
+                        res.redirect("/job/" + jobName);
                     }
                 });
         });

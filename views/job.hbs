@@ -17,7 +17,7 @@
     {{#if processed}}
         <span class="processed">(Already processed.)</span>
     {{else}}
-        <form action="/jobs/{{jobId}}/process/{{_id}}" method="POST">
+        <form action="/job/{{jobId}}/process/{{_id}}" method="POST">
             <button type="submit">Mark as Processed</button>
         </form>
     {{/if}}
