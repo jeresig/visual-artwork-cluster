@@ -21,7 +21,7 @@ app.use(busboy());
 app.use(express.static(path.join(__dirname, "public")));
 
 // Connect to database
-mongoose.connect("mongodb://localhost/visual-artwork-cluster");
+mongoose.connect(process.env.MONGO_URL);
 
 // Load in models
 require("./models/jobs");
