@@ -1,27 +1,27 @@
 <h1>Job: {{job._id}} ({{job.imageCount}} images)</h1>
 
 {{#if job.processed}}
-    <p class="processed">Entire job has been processed.</p>
+    <p class="job-processed">Entire job has been processed.</p>
 {{/if}}
 
-<ul>
+<ul class="clusters">
 {{#each clusters}}
     <li class="cluster{{#if processed}} processed{{/if}}">
-    {{#each images}}
-        <div class="image">
-            <img src="/images/{{fileName}}.jpg"/>
-            <div class="caption">{{fileName}}</div>
+        {{#each images}}
+            <div class="image">
+                <img src="/images/{{fileName}}.jpg"/>
+                <div class="caption">{{fileName}}</div>
+            </div>
+        {{/each}}
+        <div class="process">
+        {{#if processed}}
+            <span class="processed">(Already processed.)</span>
+        {{else}}
+            <form action="/job/{{jobId}}/process/{{_id}}" method="POST">
+                <button type="submit">Mark as Processed</button>
+            </form>
+        {{/if}}
         </div>
-    {{/each}}
-    <div class="process">
-    {{#if processed}}
-        <span class="processed">(Already processed.)</span>
-    {{else}}
-        <form action="/job/{{jobId}}/process/{{_id}}" method="POST">
-            <button type="submit">Mark as Processed</button>
-        </form>
-    {{/if}}
-    </div>
     </li>
 {{/each}}
 </ul>

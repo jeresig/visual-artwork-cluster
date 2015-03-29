@@ -1,8 +1,44 @@
 body {
-  padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+    padding: 50px;
+    font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
 }
 
 a {
-  color: #00B7FF;
+    color: #00B7FF;
+}
+
+.clusters {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.clusters .cluster {
+    margin: 10px 0;
+    padding: 5px;
+    border: 1px solid #999;
+    overflow: hidden;
+}
+
+.clusters .cluster.processed {
+    opacity: 0.5;
+}
+
+.clusters .cluster.processed .process {
+    display: none;
+}
+
+.clusters .image {
+    float: left;
+    width: 150px;
+    text-align: center;
+}
+
+.clusters .image img {
+    max-width: 150px;
+    max-height: 150px;
+}
+
+.clusters .image .caption {
+    text-align: center;
 }
