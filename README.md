@@ -1,3 +1,10 @@
+# Visual Artwork Cluster
+
+This is a web application that uses MatchEngine to cluster batches of images together to aide in the process of cataloging digitized images.
+
+# How to Use
+
+Images should be uploaded in batches, contained within a single zip file. All of the images should be JPEGs. Upload the zip file to the service and wait for the batch to finish processing. All of the images should have unique names and the name of the zip file will be used to keep track of the batch, as it's being processed.
 
 # Installation
 
