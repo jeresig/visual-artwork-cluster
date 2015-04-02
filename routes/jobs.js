@@ -25,7 +25,7 @@ router.get("/:jobName", function(req, res, next) {
             // Need to do a second populate() to bring in the images
             async.eachLimit(job.clusters, 1, function(cluster, callback) {
                 cluster.populate("images", function() {
-                    if (cluster.processed) {
+                    if (cluster.processed || cluster.images.length === 1) {
                         processedClusters.push(cluster);
                     } else {
                         clusters.push(cluster);
