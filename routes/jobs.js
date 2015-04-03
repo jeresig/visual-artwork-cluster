@@ -20,12 +20,11 @@ router.get("/:jobName", function(req, res, next) {
             var clusters = [];
             var processedClusters = [];
 
-            // TODO: Move out clusters that only match a single image
-
             // Need to do a second populate() to bring in the images
             async.eachLimit(job.clusters, 1, function(cluster, callback) {
                 cluster.populate("images", function() {
-                    if (cluster.processed || cluster.images.length === 1) {
+                    // Move out clusters that are already processed
+                    if (cluster.processed) {
                         processedClusters.push(cluster);
                     } else {
                         clusters.push(cluster);

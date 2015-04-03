@@ -117,8 +117,32 @@ var cmds = {
                 callback();
             });
         }, function() {
+            var rawRegex = process.env.ARTWORK_ID_REGEX;
+            var artworkIDRegex = new RegExp(rawRegex, "i");
+
             // Save all clusters
             async.eachLimit(clusters, 4, function(cluster, callback) {
+                // Process clusters that only match a single image
+                if (cluster.images.length === 1) {
+                    cluster.processed = true;
+
+                // If there is an artwork ID check then we need to make sure
+                // that there are multiple valid image IDs, otherwise we just
+                // ignore the results and mark it as processed (as if the IDs
+                // are all the same then nothing new is being discovered)
+                } else if (rawRegex) {
+                    var artworkIDs = {};
+
+                    cluster.images.forEach(function(fileName) {
+                        var match = artworkIDRegex.exec(fileName);
+                        if (match) {
+                            artworkIDs[match[1]] = true;
+                        }
+                    });
+
+                    cluster.processed = (Object.keys(artworkIDs).length === 1);
+                }
+
                 cluster.save(callback);
                 callback();
             }, function() {
