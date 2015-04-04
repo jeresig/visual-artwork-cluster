@@ -146,9 +146,17 @@ var cmds = {
                 cluster.save(callback);
                 callback();
             }, function() {
+                var processed = true;
+
                 job.clusters = clusters.map(function(cluster) {
+                    if (!cluster.processed) {
+                        cluster.processed = false;
+                    }
+
                     return cluster._id;
                 });
+
+                job.processed = processed;
                 job.state = "completed";
                 callback();
             });
