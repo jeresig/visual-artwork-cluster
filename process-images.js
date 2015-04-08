@@ -150,7 +150,7 @@ var cmds = {
 
                 job.clusters = clusters.map(function(cluster) {
                     if (!cluster.processed) {
-                        cluster.processed = false;
+                        processed = false;
                     }
 
                     return cluster._id;
