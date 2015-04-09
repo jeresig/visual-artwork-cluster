@@ -1,5 +1,6 @@
 var fs = require("fs");
 var path = require("path");
+var util = require("util");
 
 var async = require("async");
 var mongoose = require("mongoose");
@@ -23,6 +24,14 @@ router.get("/:jobName", function(req, res, next) {
             // Need to do a second populate() to bring in the images
             async.eachLimit(job.clusters, 1, function(cluster, callback) {
                 cluster.populate("images", function() {
+                    var PROCESS_URL = process.env.PROCESS_URL;
+
+                    if (PROCESS_URL) {
+                        cluster.images.forEach(function(image) {
+                            image.url = util.format(PROCESS_URL, image.fileName);
+                        });
+                    }
+
                     // Move out clusters that are already processed
                     if (cluster.processed) {
                         processedClusters.push(cluster);

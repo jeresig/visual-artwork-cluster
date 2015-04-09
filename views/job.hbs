@@ -10,7 +10,13 @@
         {{#each images}}
             <div class="image">
                 <img src="/images/{{fileName}}.jpg"/>
-                <div class="caption">{{fileName}}</div>
+                <div class="caption">
+                    {{#if url}}
+                        <a href="{{url}}">{{fileName}}</a>
+                    {{else}}
+                        {{fileName}}
+                    {{/if}}
+                </div>
             </div>
         {{/each}}
         <div class="process">
