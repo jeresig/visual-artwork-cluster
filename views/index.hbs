@@ -7,12 +7,20 @@
 
 {{#if jobs}}
     <h2>Jobs</h2>
-    <ul>
+    <ul class="jobs">
     {{#each jobs}}
         {{#if this.completed}}
-        <li class="{{#if this.processed}}processed{{/if}}"><a href="/job/{{this._id}}">{{this._id}} ({{this.imageCount}} images)</a></li>
+        <li class="job{{#if this.processed}} processed{{/if}}">
+            <a href="/job/{{this._id}}" class="title">{{this._id}}</a>
+            <span class="extra">({{this.imageCount}} images{{#if this.processed}}, Processed.{{/if}})</span>
+            <br/><span class="date">{{this.date}}</span>
+        </li>
         {{else}}
-        <li>{{this._id}} ({{this.imageCount}} images) (Processing...)</li>
+        <li class="job">
+            <span class="title">{{this._id}}</span>
+            <span class="extra">({{this.imageCount}} images) (Processing...)</span>
+            <br/><span class="date">{{this.date}}</span>
+        </li>
         {{/if}}
     {{/each}}
     </ul>

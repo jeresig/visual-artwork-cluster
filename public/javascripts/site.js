@@ -12,6 +12,7 @@ $(document).on("submit", "div.process form", function() {
         success: function() {
             $process
                 .append("<span class='processed'>(Already processed.)</span>");
+            $process.closest(".cluster").addClass("processed");
         },
         error: function() {
             // TODO: Show error message

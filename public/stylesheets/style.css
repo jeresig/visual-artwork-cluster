@@ -52,3 +52,37 @@ a {
     text-align: center;
     font-size: 0.8em;
 }
+
+.jobs {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.jobs .job {
+    margin: 10px 0;
+    padding: 5px;
+    background: #F5FAFF;
+}
+
+.jobs .job.processed {
+    opacity: 0.6;
+    background: #FFF;
+}
+
+.jobs .job .title {
+    font-weight: bold;
+}
+
+.jobs .job.processed .title {
+    font-weight: normal;
+    color: #999;
+}
+
+.jobs .job .extra {
+    font-size: 0.8em;
+}
+
+.jobs .job .date {
+    font-size: 0.8em;
+}
