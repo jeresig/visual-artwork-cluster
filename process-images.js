@@ -66,6 +66,9 @@ var cmds = {
         var clusters = [];
         var clusterMap = {};
 
+        var artworkRegex = process.env.ARTWORK_ID_REGEX;
+        var artworkIDRegex = new RegExp(rawRegex, "i");
+
         console.log("Downloading similarity data...");
 
         // Download similarity data
@@ -82,14 +85,26 @@ var cmds = {
                         return;
                     }
 
-                    var fileName = /([^\/]+)\.jpg$/.exec(match.filepath)[1];
+                    var clusterName = /([^\/]+)\.jpg$/.exec(match.filepath)[1];
 
-                    if (fileName in clusterMap) {
-                        if (curCluster && curCluster !== clusterMap[fileName]) {
+                    // If we have a artwork cluster then we make sure we cluster
+                    // by the artwork ID rather than just the file name. This
+                    // will help to ensure that all images depicting the same
+                    // artwork will be put together.
+                    if (artworkRegex) {
+                        var match = artworkIDRegex.exec(clusterName);
+                        if (match) {
+                            clusterName = match[1];
+                        }
+                    }
+
+                    if (clusterName in clusterMap) {
+                        if (curCluster &&
+                                curCluster !== clusterMap[clusterName]) {
                             console.error("Multiple clusters found!");
                         }
 
-                        curCluster = clusterMap[fileName];
+                        curCluster = clusterMap[clusterName];
                     }
 
                     return fileName;
@@ -117,9 +132,6 @@ var cmds = {
                 callback();
             });
         }, function() {
-            var rawRegex = process.env.ARTWORK_ID_REGEX;
-            var artworkIDRegex = new RegExp(rawRegex, "i");
-
             // Save all clusters
             async.eachLimit(clusters, 4, function(cluster, callback) {
                 // Process clusters that only match a single image
@@ -130,7 +142,7 @@ var cmds = {
                 // that there are multiple valid image IDs, otherwise we just
                 // ignore the results and mark it as processed (as if the IDs
                 // are all the same then nothing new is being discovered)
-                } else if (rawRegex) {
+                } else if (artworkRegex) {
                     var artworkIDs = {};
 
                     cluster.images.forEach(function(fileName) {
