@@ -99,12 +99,23 @@ var cmds = {
                     }
 
                     if (clusterName in clusterMap) {
-                        if (curCluster &&
-                                curCluster !== clusterMap[clusterName]) {
-                            console.error("Multiple clusters found!");
-                        }
+                        var otherCluster = clusterMap[clusterName];
 
-                        curCluster = clusterMap[clusterName];
+                        if (curCluster && curCluster !== otherCluster) {
+                            // Multiple clusters found!
+                            otherCluster.images.forEach(function(image) {
+                                curCluster.images.push(image);
+                                curCluster.imageCount += 1;
+                            });
+
+                            // Remove the old cluster
+                            delete clusterMap[clusterName];
+
+                            var pos = clusters.indexOf(otherCluster);
+                            clusters.splice(pos, 1);
+                        } else {
+                            curCluster = otherCluster;
+                        }
                     }
 
                     return clusterName;
