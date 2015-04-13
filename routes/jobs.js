@@ -17,6 +17,8 @@ router.get("/:jobName", function(req, res, next) {
     Job.findById(req.params.jobName)
         .populate("clusters")
         .exec(function(err, job) {
+            job.date = job.uploadDate.toLocaleDateString();
+
             // Moved processed clusters to the bottom
             var clusters = [];
             var processedClusters = [];
@@ -43,7 +45,8 @@ router.get("/:jobName", function(req, res, next) {
             }, function() {
                 res.render("job", {
                     job: job,
-                    clusters: clusters.concat(processedClusters)
+                    clusters: clusters,
+                    processed: processedClusters
                 });
             });
         });
@@ -98,6 +101,13 @@ router.post("/new", function(req, res, next) {
                 if (err) {
                     return res.render("error", {
                         message: "Error opening zip file."
+                    });
+                }
+
+                if (files.length === 0) {
+                    return res.render("error", {
+                        message: "Zip file has no images in it, or all of " +
+                            "the images were already uploaded previously."
                     });
                 }
 

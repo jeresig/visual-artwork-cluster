@@ -1,12 +1,14 @@
-<h1>Job: {{job._id}} ({{job.imageCount}} images)</h1>
+<h1>Batch: {{job._id}} ({{job.imageCount}} images)</h1>
+
+<p>Submitted {{job.date}}.</p>
 
 {{#if job.processed}}
-    <p class="job-processed">Entire job has been processed.</p>
+    <p class="job-processed">Entire batch has been processed.</p>
 {{/if}}
 
 <ul class="clusters">
 {{#each clusters}}
-    <li class="cluster{{#if processed}} processed{{/if}}">
+    <li class="cluster">
         {{#each images}}
             <div class="image">
                 <img src="/images/{{fileName}}.jpg"/>
@@ -20,14 +22,36 @@
             </div>
         {{/each}}
         <div class="process">
-        {{#if processed}}
-            <span class="processed">(Already processed.)</span>
-        {{else}}
             <form action="/job/{{jobId}}/process/{{_id}}" method="POST">
                 <button type="submit">Mark as Processed</button>
             </form>
-        {{/if}}
         </div>
     </li>
 {{/each}}
 </ul>
+
+{{#if processed}}
+<h2>Processed Groups</h2>
+
+<ul class="clusters">
+{{#each processed}}
+    <li class="cluster processed">
+        {{#each images}}
+            <div class="image">
+                <img src="/images/{{fileName}}.jpg"/>
+                <div class="caption">
+                    {{#if url}}
+                        <a href="{{url}}">{{fileName}}</a>
+                    {{else}}
+                        {{fileName}}
+                    {{/if}}
+                </div>
+            </div>
+        {{/each}}
+        <div class="process">
+            <span class="processed">(Already processed.)</span>
+        </div>
+    </li>
+{{/each}}
+</ul>
+{{/if}}

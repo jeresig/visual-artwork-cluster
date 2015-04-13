@@ -67,7 +67,7 @@ var cmds = {
         var clusterMap = {};
 
         var artworkRegex = process.env.ARTWORK_ID_REGEX;
-        var artworkIDRegex = new RegExp(rawRegex, "i");
+        var artworkIDRegex = new RegExp(artworkRegex, "i");
 
         console.log("Downloading similarity data...");
 
@@ -107,12 +107,12 @@ var cmds = {
                         curCluster = clusterMap[clusterName];
                     }
 
-                    return fileName;
-                }).filter(function(fileName) {
-                    return !!fileName;
+                    return clusterName;
+                }).filter(function(clusterName) {
+                    return !!clusterName;
                 });
 
-                matches.forEach(function(fileName) {
+                matches.forEach(function(clusterName) {
                     if (!curCluster) {
                         curCluster = new Cluster({
                             jobId: image.jobId,
@@ -120,11 +120,11 @@ var cmds = {
                         });
 
                         clusters.push(curCluster);
-                        clusterMap[fileName] = curCluster;
+                        clusterMap[clusterName] = curCluster;
                     }
 
-                    if (curCluster.images.indexOf(fileName) < 0) {
-                        curCluster.images.push(fileName);
+                    if (curCluster.images.indexOf(clusterName) < 0) {
+                        curCluster.images.push(clusterName);
                         curCluster.imageCount += 1;
                     }
                 });
