@@ -71,6 +71,21 @@ var cmds = {
 
         console.log("Downloading similarity data...");
 
+        var getClusterName = function(fileName) {
+            // If we have a artwork cluster then we make sure we cluster
+            // by the artwork ID rather than just the file name. This
+            // will help to ensure that all images depicting the same
+            // artwork will be put together.
+            if (artworkRegex) {
+                var match = artworkIDRegex.exec(fileName);
+                if (match) {
+                    return match[1];
+                }
+            }
+
+            return fileName;
+        };
+
         // Download similarity data
         async.eachLimit(job.images, 4, function(image, callback) {
             var ME_DIR = process.env.ME_DIR;
@@ -85,18 +100,8 @@ var cmds = {
                         return;
                     }
 
-                    var clusterName = /([^\/]+)\.jpg$/.exec(match.filepath)[1];
-
-                    // If we have a artwork cluster then we make sure we cluster
-                    // by the artwork ID rather than just the file name. This
-                    // will help to ensure that all images depicting the same
-                    // artwork will be put together.
-                    if (artworkRegex) {
-                        var match = artworkIDRegex.exec(clusterName);
-                        if (match) {
-                            clusterName = match[1];
-                        }
-                    }
+                    var fileName = /([^\/]+)\.jpg$/.exec(match.filepath)[1];
+                    var clusterName = getClusterName(fileName);
 
                     if (clusterName in clusterMap) {
                         var otherCluster = clusterMap[clusterName];
@@ -118,12 +123,14 @@ var cmds = {
                         }
                     }
 
-                    return clusterName;
-                }).filter(function(clusterName) {
-                    return !!clusterName;
+                    return fileName;
+                }).filter(function(fileName) {
+                    return !!fileName;
                 });
 
-                matches.forEach(function(clusterName) {
+                matches.forEach(function(fileName) {
+                    var clusterName = getClusterName(fileName);
+
                     if (!curCluster) {
                         curCluster = new Cluster({
                             jobId: image.jobId,
@@ -134,8 +141,8 @@ var cmds = {
                         clusterMap[clusterName] = curCluster;
                     }
 
-                    if (curCluster.images.indexOf(clusterName) < 0) {
-                        curCluster.images.push(clusterName);
+                    if (curCluster.images.indexOf(fileName) < 0) {
+                        curCluster.images.push(fileName);
                         curCluster.imageCount += 1;
                     }
                 });
