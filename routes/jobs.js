@@ -34,6 +34,10 @@ router.get("/:jobName", function(req, res, next) {
                         });
                     }
 
+                    cluster.images = cluster.images.sort(function(a, b) {
+                        return a.fileName.localeCompare(b.fileName);
+                    });
+
                     // Move out clusters that are already processed
                     if (cluster.processed) {
                         processedClusters.push(cluster);
