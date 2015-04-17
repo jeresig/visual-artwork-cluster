@@ -11,7 +11,11 @@
     <li class="cluster">
         {{#each images}}
             <div class="image">
-                <img src="/images/{{fileName}}.jpg"/>
+                {{#if url}}
+                    <a href="{{url}}"><img src="/images/{{fileName}}.jpg"/></a>
+                {{else}}
+                    <img src="/images/{{fileName}}.jpg"/>
+                {{/if}}
                 <div class="caption">
                     {{#if url}}
                         <a href="{{url}}">{{fileName}}</a>
