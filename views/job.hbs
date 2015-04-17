@@ -12,9 +12,9 @@
         {{#each images}}
             <div class="image">
                 {{#if url}}
-                    <a href="{{url}}"><img src="/images/{{fileName}}.jpg"/></a>
+                    <a href="{{url}}"><img src="/images/{{fileName}}.jpg" target="_blank"/></a>
                 {{else}}
-                    <img src="/images/{{fileName}}.jpg"/>
+                    <img src="/images/{{fileName}}.jpg" target="_blank"/>
                 {{/if}}
                 <div class="caption">
                     {{#if url}}
