@@ -34,4 +34,10 @@ There are five properties that you need to specify:
 - An optional URL (PROCESS\_URL) of the record in the Digital Asset Management system. The images in the results will link to the corresponding record, replacing the '%s' with the full file name of the image.
 - An optional regex (ARTWORK\_ID\_REGEX) that can be used to extract an artwork id from the image file name. This is used to get an artwork id from the image file name and then helpfully pre-process clusters to only show ones that are matching multiple images from different artworks.
 
-TODO: Document setting up cron job.
+Finally, after completing the above steps, run the `./install.sh` command to install the necessary NPM modules and add a cron job for processing images in the queue.
+
+# Running the Service
+
+At this point you should be able to start the service running. This can be handled using a number of utilities, such naught or supervisor, or you can just run it directly using:
+
+    node bin/www
