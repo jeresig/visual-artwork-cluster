@@ -1,93 +1,97 @@
-var fs = require("fs");
-var path = require("path");
-var util = require("util");
+"use strict";
 
-var async = require("async");
-var mongoose = require("mongoose");
-var unzip = require("unzip2");
-var express = require("express");
-var router = express.Router();
+const fs = require("fs");
+const path = require("path");
+const util = require("util");
 
-var Job = mongoose.model("Job");
-var Image = mongoose.model("Image");
-var Cluster = mongoose.model("Cluster");
+const async = require("async");
+const mongoose = require("mongoose");
+const unzip = require("unzip2");
+const express = require("express");
+const router = express.Router();
+
+const Job = mongoose.model("Job");
+const Image = mongoose.model("Image");
+const Cluster = mongoose.model("Cluster");
 
 /* GET job */
-router.get("/:jobName", function(req, res, next) {
+router.get("/:jobName", (req, res, next) => {
     Job.findById(req.params.jobName)
         .populate("clusters")
-        .exec(function(err, job) {
+        .exec((err, job) => {
             job.date = job.uploadDate.toLocaleDateString();
 
             // Moved processed clusters to the bottom
-            var clusters = [];
-            var processedClusters = [];
+            const clusters = [];
+            const processed = [];
 
             // Need to do a second populate() to bring in the images
-            async.eachLimit(job.clusters, 1, function(cluster, callback) {
-                cluster.populate("images", function() {
-                    var PROCESS_URL = process.env.PROCESS_URL;
+            async.eachLimit(job.clusters, 1, (cluster, callback) => {
+                cluster.populate("images", () => {
+                    const PROCESS_URL = process.env.PROCESS_URL;
 
                     if (PROCESS_URL) {
-                        cluster.images.forEach(function(image) {
-                            image.url = util.format(PROCESS_URL, image.fileName);
-                        });
+                        for (const image of cluster.images) {
+                            image.url = util.format(PROCESS_URL,
+                                image.fileName);
+                        }
                     }
 
-                    cluster.images = cluster.images.sort(function(a, b) {
-                        return a.fileName.localeCompare(b.fileName);
-                    });
+                    cluster.images = cluster.images
+                        .sort((a, b) => a.fileName.localeCompare(b.fileName));
 
                     // Move out clusters that are already processed
                     if (cluster.processed) {
-                        processedClusters.push(cluster);
+                        processed.push(cluster);
                     } else {
                         clusters.push(cluster);
                     }
                     callback();
                 });
-            }, function() {
+            }, () => {
                 res.render("job", {
-                    job: job,
-                    clusters: clusters,
-                    processed: processedClusters
+                    job,
+                    clusters,
+                    processed,
                 });
             });
         });
 });
 
 /* POST new upload */
-router.post("/new", function(req, res, next) {
-    var uploadDir = process.env.UPLOAD_DIR;
-    var files = [];
-    var existingFiles = [];
+router.post("/new", (req, res, next) => {
+    const uploadDir = process.env.UPLOAD_DIR;
+    const files = [];
+    const existingFiles = [];
 
-    req.busboy.on("file", function(field, file, zipName) {
+    req.busboy.on("file", (field, file, zipName) => {
         if (!/\.zip$/i.test(zipName)) {
             return res.render("error", {
-                message: "Uploaded file is not a zip file."
+                message: "Uploaded file is not a zip file.",
             });
         }
 
-        var jobName = zipName.replace(/\.zip$/i, "");
+        const jobName = zipName.replace(/\.zip$/i, "");
 
         file
             .pipe(unzip.Parse())
-            .on("entry", function(entry) {
-                var filePath = entry.path;
-                var type = entry.type; // Directory or File
-                var fileName = (/([^\/\\]+)\.jpe?g$/i.exec(filePath) || [])[1] || "";
+            .on("entry", (entry) => {
+                const filePath = entry.path;
+                const type = entry.type; // Directory or File
+                const fileName =
+                    (/([^\/\\]+)\.jpe?g$/i.exec(filePath) || [])[1] || "";
 
                 // Ignore things that aren't files (e.g. directories)
                 // Ignore files that don't end with .jpe?g
                 // Ignore files that start with '.'
-                if (type !== "File" || !fileName || fileName.indexOf(".") === 0) {
+                if (type !== "File" || !fileName ||
+                        fileName.indexOf(".") === 0) {
                     return entry.autodrain();
                 }
 
-                var outFileName = path.join(uploadDir, fileName + ".jpg");
+                const outFileName = path.join(uploadDir, `${fileName}.jpg`);
 
-                fs.exists(outFileName, function(exists) {
+                fs.exists(outFileName, (exists) => {
                     // Don't attempt to add files that already exist
                     if (exists) {
                         existingFiles.push(fileName);
@@ -98,20 +102,20 @@ router.post("/new", function(req, res, next) {
                     entry.pipe(fs.createWriteStream(outFileName));
                 });
             })
-            .on("error", function(err) {
+            .on("error", (err) => {
                 throw err;
             })
-            .on("close", function(err) {
+            .on("close", (err) => {
                 if (err) {
                     return res.render("error", {
-                        message: "Error opening zip file."
+                        message: "Error opening zip file.",
                     });
                 }
 
                 if (files.length === 0) {
                     return res.render("error", {
                         message: "Zip file has no images in it, or all of " +
-                            "the images were already uploaded previously."
+                            "the images were already uploaded previously.",
                     });
                 }
 
@@ -121,29 +125,29 @@ router.post("/new", function(req, res, next) {
                     imageCount: files.length,
                     uploadDate: new Date(),
                     inProgress: false,
-                    images: files
-                }, function(err, job) {
+                    images: files,
+                }, (err, job) => {
                     if (err) {
                         // Maybe file already uploaded?
                         return res.render("error", {
                             message:
-                                "Zip file with this name was already uploaded."
+                                "Zip file with this name was already uploaded.",
                         });
                     }
 
-                    async.eachLimit(files, 1, function(fileName, callback) {
+                    async.eachLimit(files, 1, (fileName, callback) => {
                         Image.create({
                             _id: fileName,
                             jobId: job._id,
                             fileName: fileName,
-                            state: "uploaded"
+                            state: "uploaded",
                         }, callback);
-                    }, function() {
+                    }, () => {
                         // Use files array
                         res.render("complete", {
                             title: "Upload Completed",
                             message: "",
-                            existingFiles: existingFiles
+                            existingFiles,
                         });
                     });
                 });
@@ -154,21 +158,20 @@ router.post("/new", function(req, res, next) {
 });
 
 /* POST process cluster */
-router.post("/:jobName/process/:clusterId", function(req, res, next) {
-    var clusterId = req.params.clusterId;
-    var jobName = req.params.jobName;
+router.post("/:jobName/process/:clusterId", (req, res, next) => {
+    const clusterId = req.params.clusterId;
+    const jobName = req.params.jobName;
 
     Cluster.findByIdAndUpdate(clusterId, {processed: true})
-        .exec(function(err, cluster) {
+        .exec((err, cluster) => {
             Cluster.count({jobId: jobName, processed: {$ne: true}},
-                function(err, count) {
+                (err, count) => {
                     if (count === 0) {
                         Job.findByIdAndUpdate(req.params.jobName,
-                            {processed: true}, function() {
-                                res.redirect("/job/" + jobName);
-                            });
+                            {processed: true}, () =>
+                                res.redirect(`/job/${jobName}`));
                     } else {
-                        res.redirect("/job/" + jobName);
+                        res.redirect(`/job/${jobName}`);
                     }
                 });
         });

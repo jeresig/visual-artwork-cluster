@@ -1,8 +1,10 @@
-var mongoose = require("mongoose");
+"use strict";
+
+const mongoose = require("mongoose");
 
 mongoose.model("Cluster", {
     jobId: {type: String, ref: "Job"},
     images: [{type: String, ref: "Image"}],
     imageCount: Number,
-    processed: Boolean
+    processed: Boolean,
 });

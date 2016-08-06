@@ -1,4 +1,6 @@
-var mongoose = require("mongoose");
+"use strict";
+
+const mongoose = require("mongoose");
 
 mongoose.model("Job", {
     _id: String,
@@ -14,5 +16,5 @@ mongoose.model("Job", {
     uploadIP: String,
     images: [{type: String, ref: "Image"}],
     clusters: [{type: mongoose.Schema.Types.ObjectId, ref: "Cluster"}],
-    processed: Boolean
+    processed: Boolean,
 });

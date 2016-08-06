@@ -1,14 +1,15 @@
-var path = require("path");
+"use strict";
+
+const path = require("path");
 
 require("dotenv").load();
 
-var express = require("express");
-var favicon = require("serve-favicon");
-var logger = require("morgan");
-var busboy = require("connect-busboy");
-var mongoose = require("mongoose");
+const express = require("express");
+const logger = require("morgan");
+const busboy = require("connect-busboy");
+const mongoose = require("mongoose");
 
-var app = express();
+const app = express();
 
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
@@ -28,8 +29,8 @@ require("./models/jobs");
 require("./models/clusters");
 require("./models/images");
 
-var routes = require("./routes/index");
-var jobs = require("./routes/jobs");
+const routes = require("./routes/index");
+const jobs = require("./routes/jobs");
 
 app.use("/", routes);
 app.use("/job", jobs);
@@ -37,8 +38,8 @@ app.use("/images", express.static(
     path.join(__dirname, process.env.UPLOAD_DIR)));
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
-    var err = new Error("Not Found");
+app.use((req, res, next) => {
+    const err = new Error("Not Found");
     err.status = 404;
     next(err);
 });
@@ -48,22 +49,22 @@ app.use(function(req, res, next) {
 // development error handler
 // will print stacktrace
 if (app.get("env") === "development") {
-    app.use(function(err, req, res, next) {
-        res.status(err.status || 500);
+    app.use((error, req, res, next) => {
+        res.status(error.status || 500);
         res.render("error", {
-            message: err.message,
-            error: err
+            message: error.message,
+            error,
         });
     });
 }
 
 // production error handler
 // no stacktraces leaked to user
-app.use(function(err, req, res, next) {
-    res.status(err.status || 500);
+app.use((error, req, res, next) => {
+    res.status(error.status || 500);
     res.render("error", {
-        message: err.message,
-        error: {}
+        message: error.message,
+        error: {},
     });
 });
 
