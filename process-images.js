@@ -1,12 +1,14 @@
-var path = require("path");
+"use strict";
+
+const path = require("path");
 
 require("dotenv").load();
 
-var async = require("async");
-var mongoose = require("mongoose");
-var ME = require("matchengine")({
+const async = require("async");
+const mongoose = require("mongoose");
+const ME = require("matchengine")({
     username: process.env.ME_USERNAME,
-    password: process.env.ME_PASSWORD
+    password: process.env.ME_PASSWORD,
 });
 
 // Connect to database
@@ -17,67 +19,64 @@ require("./models/jobs");
 require("./models/clusters");
 require("./models/images");
 
-var Job = mongoose.model("Job");
-var Cluster = mongoose.model("Cluster");
-var Image = mongoose.model("Image");
+const Job = mongoose.model("Job");
+const Cluster = mongoose.model("Cluster");
 
-var cmds = {
+const cmds = {
     // Upload the data to MatchEngine
     uploaded: function(job, callback) {
-        var groups = [];
-        var batchSize = 100;
-        var pause = 5000;
-        var count = 1;
+        const groups = [];
+        const batchSize = 100;
+        const pause = 5000;
+        let count = 1;
 
         // Group the images into batches to upload
-        for (var i = 0; i < job.images.length; i += batchSize) {
+        for (let i = 0; i < job.images.length; i += batchSize) {
             groups.push(job.images.slice(i, i + batchSize));
         }
 
-        async.eachSeries(groups, function(images, callback) {
-            console.log("Uploading batch [" +
-                count + "/" + groups.length + "]");
+        async.eachSeries(groups, (images, callback) => {
+            console.log(`Uploading batch [${count}/${groups.length}]`);
 
-            var files = images.map(function(image) {
-                return path.join(process.env.UPLOAD_DIR, image._id + ".jpg");
-            });
+            const files = images.map((image) =>
+                path.join(process.env.UPLOAD_DIR, `${image._id}.jpg`));
 
-            ME.add(files, process.env.ME_DIR, function(err) {
-                console.log("Batch done #" + count);
+            ME.add(files, process.env.ME_DIR, (err) => {
+                console.log(`Batch done #${count}`);
                 count += 1;
 
                 // Update all the images, marking them as completed
-                async.eachLimit(images, 4, function(image, callback) {
+                async.eachLimit(images, 4, (image, callback) => {
                     image.update({state: "completed"}, callback);
-                }, function() {
+                }, () => {
                     console.log("Image records updated.");
 
                     // Pause at the end of each upload
                     setTimeout(callback, pause);
                 });
             });
-        }, function() {
+        }, () => {
             job.state = "uploaded-me";
             callback();
         });
     },
 
     "uploaded-me": function(job, callback) {
-        var clusters = [];
-        var clusterMap = {};
+        const clusters = [];
+        const clusterMap = {};
 
-        var artworkRegex = process.env.ARTWORK_ID_REGEX;
-        var artworkIDRegex = new RegExp(artworkRegex, "i");
+        const artworkRegex = process.env.ARTWORK_ID_REGEX;
+        const artworkIDRegex = new RegExp(artworkRegex, "i");
 
         console.log("Downloading similarity data...");
 
-        var getClusterName = function(fileName) {
+        const getClusterName = function(fileName) {
             // If we have a artwork cluster then we make sure we cluster
             // by the artwork ID rather than just the file name. This
             // will help to ensure that all images depicting the same
             // artwork will be put together.
             if (artworkRegex) {
-                var match = artworkIDRegex.exec(fileName);
+                const match = artworkIDRegex.exec(fileName);
                 if (match) {
                     return match[1];
                 }
@@ -87,36 +86,36 @@ var cmds = {
         };
 
         // Download similarity data
-        async.eachLimit(job.images, 4, function(image, callback) {
-            var ME_DIR = process.env.ME_DIR;
-            var filePath = ME_DIR + "/" + image._id + ".jpg";
+        async.eachLimit(job.images, 4, (image, callback) => {
+            const ME_DIR = process.env.ME_DIR;
+            const filePath = `${ME_DIR}/${image._id}.jpg`;
 
-            ME.similar(filePath, function(err, matches) {
-                var curCluster;
+            ME.similar(filePath, (err, matches) => {
+                let curCluster;
 
-                matches = matches.map(function(match) {
+                matches = matches.map((match) => {
                     // If some other file was matched we just ignore it
                     if (match.filepath.indexOf(ME_DIR) !== 0) {
                         return;
                     }
 
-                    var fileName = /([^\/]+)\.jpg$/.exec(match.filepath)[1];
-                    var clusterName = getClusterName(fileName);
+                    const fileName = /([^\/]+)\.jpg$/.exec(match.filepath)[1];
+                    const clusterName = getClusterName(fileName);
 
                     if (clusterName in clusterMap) {
-                        var otherCluster = clusterMap[clusterName];
+                        const otherCluster = clusterMap[clusterName];
 
                         if (curCluster && curCluster !== otherCluster) {
                             // Multiple clusters found!
-                            otherCluster.images.forEach(function(image) {
+                            for (const image of otherCluster.images) {
                                 curCluster.images.push(image);
                                 curCluster.imageCount += 1;
-                            });
+                            }
 
                             // Remove the old cluster
                             delete clusterMap[clusterName];
 
-                            var pos = clusters.indexOf(otherCluster);
+                            const pos = clusters.indexOf(otherCluster);
                             clusters.splice(pos, 1);
                         } else {
                             curCluster = otherCluster;
@@ -124,17 +123,15 @@ var cmds = {
                     }
 
                     return fileName;
-                }).filter(function(fileName) {
-                    return !!fileName;
-                });
+                }).filter((fileName) => fileName);
 
-                matches.forEach(function(fileName) {
-                    var clusterName = getClusterName(fileName);
+                for (const fileName of matches) {
+                    const clusterName = getClusterName(fileName);
 
                     if (!curCluster) {
                         curCluster = new Cluster({
                             jobId: image.jobId,
-                            imageCount: 0
+                            imageCount: 0,
                         });
 
                         clusters.push(curCluster);
@@ -145,13 +142,13 @@ var cmds = {
                         curCluster.images.push(fileName);
                         curCluster.imageCount += 1;
                     }
-                });
+                }
 
                 callback();
             });
-        }, function() {
+        }, () => {
             // Save all clusters
-            async.eachLimit(clusters, 4, function(cluster, callback) {
+            async.eachLimit(clusters, 4, (cluster, callback) => {
                 // Process clusters that only match a single image
                 if (cluster.images.length === 1) {
                     cluster.processed = true;
@@ -161,24 +158,24 @@ var cmds = {
                 // ignore the results and mark it as processed (as if the IDs
                 // are all the same then nothing new is being discovered)
                 } else if (artworkRegex) {
-                    var artworkIDs = {};
+                    const artworkIDs = {};
 
-                    cluster.images.forEach(function(fileName) {
-                        var match = artworkIDRegex.exec(fileName);
+                    for (const fileName of cluster.images) {
+                        const match = artworkIDRegex.exec(fileName);
                         if (match) {
                             artworkIDs[match[1]] = true;
                         }
-                    });
+                    }
 
                     cluster.processed = (Object.keys(artworkIDs).length === 1);
                 }
 
                 cluster.save(callback);
                 callback();
-            }, function() {
-                var processed = true;
+            }, () => {
+                let processed = true;
 
-                job.clusters = clusters.map(function(cluster) {
+                job.clusters = clusters.map((cluster) => {
                     if (!cluster.processed) {
                         processed = false;
                     }
@@ -191,17 +188,17 @@ var cmds = {
                 callback();
             });
         });
-    }
+    },
 };
 
 Job.findOneAndUpdate({
     state: {$ne: "completed"},
-    inProgress: false
+    inProgress: false,
 }, {
-    inProgress: true
+    inProgress: true,
 })
     .populate("images")
-    .exec(function(err, job) {
+    .exec((err, job) => {
         if (err) {
             console.error(err);
             process.exit(0);
@@ -215,10 +212,10 @@ Job.findOneAndUpdate({
 
         console.log("Job found:", job._id);
 
-        cmds[job.state](job, function(err) {
+        cmds[job.state](job, (err) => {
             job.inProgress = false;
 
-            job.save(function() {
+            job.save(() => {
                 console.log("DONE");
                 process.exit(0);
             });
