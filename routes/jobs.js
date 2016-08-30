@@ -29,11 +29,12 @@ router.get("/:jobName", (req, res, next) => {
             async.eachLimit(job.clusters, 1, (cluster, callback) => {
                 cluster.populate("images", () => {
                     const PROCESS_URL = process.env.PROCESS_URL;
+                    const ID_REGEX = new RegExp(process.env.ARTWORK_ID_REGEX);
 
                     if (PROCESS_URL) {
                         for (const image of cluster.images) {
-                            image.url = util.format(PROCESS_URL,
-                                image.fileName);
+                            const match = ID_REGEX.exec(image.fileName)[1];
+                            image.url = util.format(PROCESS_URL, match);
                         }
                     }
 
