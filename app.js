@@ -31,9 +31,11 @@ require("./models/images");
 
 const routes = require("./routes/index");
 const jobs = require("./routes/jobs");
+const clusters = require("./routes/clusters");
 
 app.use("/", routes);
 app.use("/job", jobs);
+app.use("/cluster", clusters);
 app.use("/images", express.static(
     path.join(__dirname, process.env.UPLOAD_DIR)));
 

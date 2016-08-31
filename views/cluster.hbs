@@ -1,0 +1,27 @@
+<h1>Image Comparison</h1>
+
+<div>
+    {{#each cluster.images}}
+        <div class="image">
+            {{#if url}}
+                <a href="{{url}}" target="_blank">
+                    <img src="/images/{{fileName}}.jpg"/>
+                </a>
+            {{else}}
+                <img src="/images/{{fileName}}.jpg"/>
+            {{/if}}
+            <div class="caption">
+                {{#if url}}
+                    <a href="{{url}}">{{fileName}}</a>
+                {{else}}
+                    {{fileName}}
+                {{/if}}
+            </div>
+        </div>
+    {{/each}}
+    <div class="process">
+        <form action="/cluster/{{cluster._id}}" method="POST">
+            <button type="submit">Mark as Processed</button>
+        </form>
+    </div>
+</div>

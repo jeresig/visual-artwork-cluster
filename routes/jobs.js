@@ -2,7 +2,6 @@
 
 const fs = require("fs");
 const path = require("path");
-const util = require("util");
 
 const async = require("async");
 const mongoose = require("mongoose");
@@ -12,7 +11,6 @@ const router = express.Router();
 
 const Job = mongoose.model("Job");
 const Image = mongoose.model("Image");
-const Cluster = mongoose.model("Cluster");
 
 /* GET job */
 router.get("/:jobName", (req, res, next) => {
@@ -25,36 +23,19 @@ router.get("/:jobName", (req, res, next) => {
             const clusters = [];
             const processed = [];
 
-            // Need to do a second populate() to bring in the images
-            async.eachLimit(job.clusters, 1, (cluster, callback) => {
-                cluster.populate("images", () => {
-                    const PROCESS_URL = process.env.PROCESS_URL;
-                    const ID_REGEX = new RegExp(process.env.ARTWORK_ID_REGEX);
+            for (const cluster of job.clusters) {
+                // Move out clusters that are already processed
+                if (cluster.processed) {
+                    processed.push(cluster);
+                } else {
+                    clusters.push(cluster);
+                }
+            }
 
-                    if (PROCESS_URL) {
-                        for (const image of cluster.images) {
-                            const match = ID_REGEX.exec(image.fileName)[1];
-                            image.url = util.format(PROCESS_URL, match);
-                        }
-                    }
-
-                    cluster.images = cluster.images
-                        .sort((a, b) => a.fileName.localeCompare(b.fileName));
-
-                    // Move out clusters that are already processed
-                    if (cluster.processed) {
-                        processed.push(cluster);
-                    } else {
-                        clusters.push(cluster);
-                    }
-                    callback();
-                });
-            }, () => {
-                res.render("job", {
-                    job,
-                    clusters,
-                    processed,
-                });
+            res.render("job", {
+                job,
+                clusters,
+                processed,
             });
         });
 });
@@ -156,26 +137,6 @@ router.post("/new", (req, res, next) => {
     });
 
     req.pipe(req.busboy);
-});
-
-/* POST process cluster */
-router.post("/:jobName/process/:clusterId", (req, res, next) => {
-    const clusterId = req.params.clusterId;
-    const jobName = req.params.jobName;
-
-    Cluster.findByIdAndUpdate(clusterId, {processed: true})
-        .exec((err, cluster) => {
-            Cluster.count({jobId: jobName, processed: {$ne: true}},
-                (err, count) => {
-                    if (count === 0) {
-                        Job.findByIdAndUpdate(req.params.jobName,
-                            {processed: true}, () =>
-                                res.redirect(`/job/${jobName}`));
-                    } else {
-                        res.redirect(`/job/${jobName}`);
-                    }
-                });
-        });
 });
 
 module.exports = router;

@@ -11,25 +11,12 @@
     <li class="cluster">
         {{#each images}}
             <div class="image">
-                {{#if url}}
-                    <a href="{{url}}"><img src="/images/{{fileName}}.jpg" target="_blank"/></a>
-                {{else}}
-                    <img src="/images/{{fileName}}.jpg" target="_blank"/>
-                {{/if}}
-                <div class="caption">
-                    {{#if url}}
-                        <a href="{{url}}">{{fileName}}</a>
-                    {{else}}
-                        {{fileName}}
-                    {{/if}}
-                </div>
+                <a href="/cluster/{{../_id}}" target="_blank">
+                    <img src="/images/{{.}}.jpg"/>
+                </a>
+                <div class="caption">{{.}}</div>
             </div>
         {{/each}}
-        <div class="process">
-            <form action="/job/{{jobId}}/process/{{_id}}" method="POST">
-                <button type="submit">Mark as Processed</button>
-            </form>
-        </div>
     </li>
 {{/each}}
 </ul>
@@ -42,14 +29,8 @@
     <li class="cluster processed">
         {{#each images}}
             <div class="image">
-                <img src="/images/{{fileName}}.jpg"/>
-                <div class="caption">
-                    {{#if url}}
-                        <a href="{{url}}">{{fileName}}</a>
-                    {{else}}
-                        {{fileName}}
-                    {{/if}}
-                </div>
+                <img src="/images/{{.}}.jpg"/>
+                <div class="caption">{{.}}</div>
             </div>
         {{/each}}
         <div class="process">
