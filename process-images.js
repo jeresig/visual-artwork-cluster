@@ -12,6 +12,7 @@ const ME = require("matchengine")({
 });
 
 // Connect to database
+mongoose.Promise = global.Promise;
 mongoose.connect(process.env.MONGO_URL);
 
 // Load in models
@@ -90,6 +91,8 @@ const cmds = {
             const ME_DIR = process.env.ME_DIR;
             const filePath = `${ME_DIR}/${image._id}.jpg`;
 
+            console.log(`Downloding similarity for ${image._id}...`);
+
             ME.similar(filePath, (err, matches) => {
                 let curCluster;
 
@@ -147,6 +150,8 @@ const cmds = {
                 callback();
             });
         }, () => {
+            console.log("Saving clusters...");
+
             // Save all clusters
             async.eachLimit(clusters, 4, (cluster, callback) => {
                 // Process clusters that only match a single image
@@ -171,8 +176,9 @@ const cmds = {
                 }
 
                 cluster.save(callback);
-                callback();
             }, () => {
+                console.log("Saving job...");
+
                 let processed = true;
 
                 job.clusters = clusters.map((cluster) => {
