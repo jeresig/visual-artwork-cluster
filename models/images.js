@@ -7,4 +7,5 @@ mongoose.model("Image", {
     jobId: {type: String, ref: "Job"},
     fileName: String,
     state: String,
+    entropy: Number,
 });

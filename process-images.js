@@ -1,6 +1,7 @@
 "use strict";
 
 const path = require("path");
+const {exec} = require("child_process");
 
 require("dotenv").load();
 
@@ -24,8 +25,35 @@ const Job = mongoose.model("Job");
 const Cluster = mongoose.model("Cluster");
 
 const cmds = {
+    // Extract the entropy details for the images
+    extractEntropy(job, callback) {
+        async.eachLimit(job.images, 2, (image, callback) => {
+            if (image.entropy !== undefined) {
+                return process.nextTick(callback);
+            }
+
+            console.log(`Getting entropy for ${image._id}...`);
+
+            const file = path.join(process.env.UPLOAD_DIR, `${image._id}.jpg`);
+            exec(`identify -verbose ${file}`, (err, output) => {
+                image.entropy = 0;
+
+                // This could fail if the image is greyscale
+                // (so we fall back to 0)
+                if (/Overall:[\s\S]*?entropy: ([\d.]+)/.test(output)) {
+                    image.entropy = parseFloat(RegExp.$1);
+                }
+
+                image.save(callback);
+            });
+        }, (err) => {
+            job.state = "uploadME";
+            callback();
+        });
+    },
+
     // Upload the data to MatchEngine
-    uploaded: function(job, callback) {
+    uploadME: function(job, callback) {
         const groups = [];
         const batchSize = 100;
         const pause = 5000;
@@ -57,12 +85,12 @@ const cmds = {
                 });
             });
         }, () => {
-            job.state = "uploaded-me";
+            job.state = "similarityME";
             callback();
         });
     },
 
-    "uploaded-me": function(job, callback) {
+    similarityME: function(job, callback) {
         const clusters = [];
         const clusterMap = {};
 
