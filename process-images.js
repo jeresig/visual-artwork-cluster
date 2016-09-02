@@ -24,9 +24,18 @@ require("./models/images");
 const Job = mongoose.model("Job");
 const Cluster = mongoose.model("Cluster");
 
+const MIN_ENTROPY = parseFloat(process.env.MIN_ENTROPY) || 0;
+
 const cmds = {
     // Extract the entropy details for the images
     extractEntropy(job, callback) {
+        if (MIN_ENTROPY === 0) {
+            return process.nextTick(() => {
+                job.state = "uploadME";
+                callback();
+            });
+        }
+
         async.eachLimit(job.images, 2, (image, callback) => {
             if (image.entropy !== undefined) {
                 return process.nextTick(callback);
@@ -58,35 +67,45 @@ const cmds = {
         const batchSize = 100;
         const pause = 5000;
         let count = 1;
+        const ME_DIR = process.env.ME_DIR;
 
-        // Group the images into batches to upload
-        for (let i = 0; i < job.images.length; i += batchSize) {
-            groups.push(job.images.slice(i, i + batchSize));
-        }
+        console.log("Downloading existing file list...");
 
-        async.eachSeries(groups, (images, callback) => {
-            console.log(`Uploading batch [${count}/${groups.length}]`);
+        ME.list((err, meFiles) => {
+            const filteredImages = job.images
+                .filter((image) =>
+                    meFiles.indexOf(`${ME_DIR}/${image._id}.jpg`) < 0)
+                .filter((image) => image.entropy >= MIN_ENTROPY);
 
-            const files = images.map((image) =>
-                path.join(process.env.UPLOAD_DIR, `${image._id}.jpg`));
+            // Group the images into batches to upload
+            for (let i = 0; i < filteredImages.length; i += batchSize) {
+                groups.push(filteredImages.slice(i, i + batchSize));
+            }
 
-            ME.add(files, process.env.ME_DIR, (err) => {
-                console.log(`Batch done #${count}`);
-                count += 1;
+            async.eachSeries(groups, (images, callback) => {
+                console.log(`Uploading batch [${count}/${groups.length}]`);
 
-                // Update all the images, marking them as completed
-                async.eachLimit(images, 4, (image, callback) => {
-                    image.update({state: "completed"}, callback);
-                }, () => {
-                    console.log("Image records updated.");
+                const files = images.map((image) =>
+                    path.join(process.env.UPLOAD_DIR, `${image._id}.jpg`));
 
-                    // Pause at the end of each upload
-                    setTimeout(callback, pause);
+                ME.add(files, process.env.ME_DIR, (err) => {
+                    console.log(`Batch done #${count}`);
+                    count += 1;
+
+                    // Update all the images, marking them as completed
+                    async.eachLimit(images, 4, (image, callback) => {
+                        image.update({state: "completed"}, callback);
+                    }, () => {
+                        console.log("Image records updated.");
+
+                        // Pause at the end of each upload
+                        setTimeout(callback, pause);
+                    });
                 });
+            }, () => {
+                job.state = "similarityME";
+                callback();
             });
-        }, () => {
-            job.state = "similarityME";
-            callback();
         });
     },
 
@@ -114,12 +133,15 @@ const cmds = {
             return fileName;
         };
 
+        const images = job.images
+            .filter((image) => image.entropy >= MIN_ENTROPY);
+
         // Download similarity data
-        async.eachLimit(job.images, 4, (image, callback) => {
+        async.eachLimit(images, 4, (image, callback) => {
             const ME_DIR = process.env.ME_DIR;
             const filePath = `${ME_DIR}/${image._id}.jpg`;
 
-            console.log(`Downloding similarity for ${image._id}...`);
+            console.log(`Downloading similarity for ${image._id}...`);
 
             ME.similar(filePath, (err, matches) => {
                 let curCluster;
@@ -225,33 +247,33 @@ const cmds = {
     },
 };
 
-Job.findOneAndUpdate({
+Job.findOne({
     state: {$ne: "completed"},
     inProgress: false,
-}, {
-    inProgress: true,
 })
     .populate("images")
     .exec((err, job) => {
         if (err) {
             console.error(err);
-            process.exit(0);
-            return;
+            return process.exit(1);
         }
 
         if (!job) {
-            process.exit(0);
-            return;
+            return process.exit(0);
         }
 
         console.log("Job found:", job._id);
 
-        cmds[job.state](job, (err) => {
-            job.inProgress = false;
+        job.inProgress = true;
 
-            job.save(() => {
-                console.log("DONE");
-                process.exit(0);
+        job.save(() => {
+            cmds[job.state](job, (err) => {
+                job.inProgress = false;
+
+                job.save(() => {
+                    console.log("DONE");
+                    process.exit(0);
+                });
             });
         });
     });

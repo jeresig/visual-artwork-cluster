@@ -15,7 +15,7 @@ const Image = mongoose.model("Image");
 /* GET job */
 router.get("/:jobName", (req, res, next) => {
     Job.findById(req.params.jobName)
-        .populate("clusters images")
+        .populate("clusters")
         .exec((err, job) => {
             job.date = job.uploadDate.toLocaleDateString();
 
@@ -32,14 +32,10 @@ router.get("/:jobName", (req, res, next) => {
                 }
             }
 
-            const images = Array.prototype.slice.call(job.images)
-                .sort((a, b) => b.entropy - a.entropy);
-
             res.render("job", {
                 job,
                 clusters,
                 processed,
-                images,
             });
         });
 });

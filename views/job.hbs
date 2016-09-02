@@ -6,13 +6,6 @@
     <p class="job-processed">Entire batch has been processed.</p>
 {{/if}}
 
-{{#each images}}
-    <div style="float:left;width:150px;height:150px;">
-        <img src="/images/{{fileName}}.jpg" style="max-width:150px;max-height:130px;"/>
-        {{entropy}}
-    </div>
-{{/each}}
-
 <ul class="clusters">
 {{#each clusters}}
     <li class="cluster">
