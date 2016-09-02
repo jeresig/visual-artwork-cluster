@@ -204,14 +204,14 @@ const cmds = {
 
             // Save all clusters
             async.eachLimit(clusters, 4, (cluster, callback) => {
-                // Process clusters that only match a single image
+                // Ignore clusters that only match a single image
                 if (cluster.images.length === 1) {
-                    cluster.processed = true;
+                    return process.nextTick(callback);
 
                 // If there is an artwork ID check then we need to make sure
                 // that there are multiple valid image IDs, otherwise we just
-                // ignore the results and mark it as processed (as if the IDs
-                // are all the same then nothing new is being discovered)
+                // ignore the cluster (as if the IDs are all the same then
+                // nothing new is being discovered)
                 } else if (artworkRegex) {
                     const artworkIDs = {};
 
@@ -222,9 +222,12 @@ const cmds = {
                         }
                     }
 
-                    cluster.processed = (Object.keys(artworkIDs).length === 1);
+                    if (Object.keys(artworkIDs).length === 1) {
+                        return process.nextTick(callback);
+                    }
                 }
 
+                cluster.images = cluster.images.sort();
                 cluster.save(callback);
             }, () => {
                 console.log("Saving job...");
