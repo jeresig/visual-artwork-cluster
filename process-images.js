@@ -62,7 +62,7 @@ const cmds = {
     },
 
     // Upload the data to MatchEngine
-    uploadME: function(job, callback) {
+    uploadME(job, callback) {
         const groups = [];
         const batchSize = 100;
         const pause = 5000;
@@ -109,29 +109,21 @@ const cmds = {
         });
     },
 
-    similarityME: function(job, callback) {
+    similarityME(job, callback) {
         const clusters = [];
         const clusterMap = {};
 
-        const artworkRegex = process.env.ARTWORK_ID_REGEX;
+        const artworkRegex = process.env.ARTWORK_ID_REGEX || "([^.]*)";
         const artworkIDRegex = new RegExp(artworkRegex, "i");
 
         console.log("Downloading similarity data...");
 
-        const getClusterName = function(fileName) {
-            // If we have a artwork cluster then we make sure we cluster
-            // by the artwork ID rather than just the file name. This
-            // will help to ensure that all images depicting the same
-            // artwork will be put together.
-            if (artworkRegex) {
-                const match = artworkIDRegex.exec(fileName);
-                if (match) {
-                    return match[1];
-                }
-            }
-
-            return fileName;
-        };
+        // If we have a artwork cluster then we make sure we cluster
+        // by the artwork ID rather than just the file name. This
+        // will help to ensure that all images depicting the same
+        // artwork will be put together.
+        const getClusterName = (fileName) =>
+            artworkIDRegex.exec(fileName)[1];
 
         const images = job.images
             .filter((image) => image.entropy >= MIN_ENTROPY);
@@ -207,24 +199,21 @@ const cmds = {
                 // Ignore clusters that only match a single image
                 if (cluster.images.length === 1) {
                     return process.nextTick(callback);
+                }
 
                 // If there is an artwork ID check then we need to make sure
                 // that there are multiple valid image IDs, otherwise we just
                 // ignore the cluster (as if the IDs are all the same then
                 // nothing new is being discovered)
-                } else if (artworkRegex) {
-                    const artworkIDs = {};
+                const artworkIDs = {};
 
-                    for (const fileName of cluster.images) {
-                        const match = artworkIDRegex.exec(fileName);
-                        if (match) {
-                            artworkIDs[match[1]] = true;
-                        }
-                    }
+                for (const fileName of cluster.images) {
+                    const clusterName = getClusterName(fileName);
+                    artworkIDs[clusterName] = true;
+                }
 
-                    if (Object.keys(artworkIDs).length === 1) {
-                        return process.nextTick(callback);
-                    }
+                if (Object.keys(artworkIDs).length === 1) {
+                    return process.nextTick(callback);
                 }
 
                 cluster.images = cluster.images.sort();
