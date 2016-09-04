@@ -28,14 +28,17 @@ mongoose.connect(process.env.MONGO_URL);
 require("./models/jobs");
 require("./models/clusters");
 require("./models/images");
+require("./models/data");
 
 const routes = require("./routes/index");
 const jobs = require("./routes/jobs");
 const clusters = require("./routes/clusters");
+const data = require("./routes/data");
 
 app.use("/", routes);
 app.use("/job", jobs);
 app.use("/cluster", clusters);
+app.use("/data", data);
 app.use("/images", express.static(
     path.join(__dirname, process.env.UPLOAD_DIR)));
 

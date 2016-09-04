@@ -44,12 +44,14 @@
             </div>
             {{#if data}}
             <div class="data">
-            <form action="/update-data" method="POST">
+            <form action="/data/update-data" method="POST">
+                <input type="hidden" name="id" value="{{id}}"/>
+                <input type="hidden" name="cluster" value="{{../cluster._id}}"/>
                 <table>
                 {{#each data}}
                     <tr>
-                        <th><label for="{{@key}}">{{@key}}:</label></th>
-                        <td><input type="text" name="{{@key}}" value="{{this}}"/></td>
+                        <th>{{@key}}:</th>
+                        <td><input type="text" name="data[{{@key}}]" value="{{this}}"/></td>
                     </tr>
                 {{/each}}
                 </table>

@@ -146,19 +146,4 @@ router.post("/new", (req, res, next) => {
     req.pipe(req.busboy);
 });
 
-/* POST new data upload */
-router.post("/new-data", (req, res, next) => {
-    req.busboy.on("file", (field, file) => {
-        const dataFile = path.join(process.env.UPLOAD_DIR, "data.csv");
-
-        file
-            .pipe(fs.createWriteStream(dataFile))
-            .on("close", () => {
-                res.render("data-complete", {});
-            });
-    });
-
-    req.pipe(req.busboy);
-});
-
 module.exports = router;
