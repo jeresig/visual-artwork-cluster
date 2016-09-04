@@ -2,7 +2,6 @@
 
 const fs = require("fs");
 const path = require("path");
-const util = require("util");
 
 const mongoose = require("mongoose");
 const express = require("express");
@@ -14,11 +13,11 @@ const Cluster = mongoose.model("Cluster");
 
 const readDataFile = (callback) => {
     const dataFile = path.join(process.env.UPLOAD_DIR, "data.csv");
-    const INDEX_FIELD = process.env.DATA_INDEX_FIELD;
+    const ARTWORK_FIELD = process.env.DATA_ARTWORK_FIELD;
     const results = {};
 
     fs.stat(dataFile, (err) => {
-        if (err || !INDEX_FIELD) {
+        if (err || !ARTWORK_FIELD) {
             return callback(null, results);
         }
 
@@ -30,7 +29,7 @@ const readDataFile = (callback) => {
                 columns: true,
             }))
             .on("data", (data) => {
-                results[data[INDEX_FIELD]] = data;
+                results[data[ARTWORK_FIELD]] = data;
             })
             .on("error", callback)
             .on("end", () => {
@@ -45,31 +44,17 @@ router.get("/:clusterId", (req, res, next) => {
 
     Cluster.findById(clusterId, (err, cluster) => {
         cluster.populate("images", () => {
-            const PROCESS_URL = process.env.PROCESS_URL;
-            const ID_REGEX = new RegExp(process.env.ARTWORK_ID_REGEX);
+            readDataFile((err, data) => {
+                const artworks = cluster.artworks;
 
-            if (PROCESS_URL) {
-                for (const image of cluster.images) {
-                    const match = ID_REGEX.exec(image.fileName)[1];
-                    image.url = util.format(PROCESS_URL, match);
-                }
-            }
-
-            cluster.images = cluster.images
-                .sort((a, b) => a.fileName.localeCompare(b.fileName));
-
-            readDataFile((err, results) => {
-                const images = [];
-
-                for (const image of cluster.images) {
-                    const data = results[image.fileName] || {};
-                    images.push({image, data});
+                for (const artwork of artworks) {
+                    artwork.data = data[artwork.id];
                 }
 
                 res.render("cluster", {
                     title: "Compare Image Cluster",
                     cluster,
-                    images,
+                    artworks,
                 });
             });
         });

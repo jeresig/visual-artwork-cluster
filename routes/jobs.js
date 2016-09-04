@@ -19,23 +19,27 @@ router.get("/:jobName", (req, res, next) => {
         .exec((err, job) => {
             job.date = job.uploadDate.toLocaleDateString();
 
-            // Moved processed clusters to the bottom
-            const clusters = [];
-            const processed = [];
+            async.eachLimit(job.clusters, 2, (cluster, callback) => {
+                cluster.populate("images", callback);
+            }, () => {
+                // Moved processed clusters to the bottom
+                const clusters = [];
+                const processed = [];
 
-            for (const cluster of job.clusters) {
-                // Move out clusters that are already processed
-                if (cluster.processed) {
-                    processed.push(cluster);
-                } else {
-                    clusters.push(cluster);
+                for (const cluster of job.clusters) {
+                    // Move out clusters that are already processed
+                    if (cluster.processed) {
+                        processed.push(cluster);
+                    } else {
+                        clusters.push(cluster);
+                    }
                 }
-            }
 
-            res.render("job", {
-                job,
-                clusters,
-                processed,
+                res.render("job", {
+                    job,
+                    clusters,
+                    processed,
+                });
             });
         });
 });
@@ -101,6 +105,12 @@ router.post("/new", (req, res, next) => {
                     });
                 }
 
+                const artworkRegex = process.env.ARTWORK_ID_REGEX || "([^.]*)";
+                const artworkIDRegex = new RegExp(artworkRegex, "i");
+
+                const getArtworkName = (fileName) =>
+                    artworkIDRegex.exec(fileName)[1];
+
                 Job.create({
                     _id: jobName,
                     state: "extractEntropy",
@@ -122,6 +132,7 @@ router.post("/new", (req, res, next) => {
                             _id: fileName,
                             jobId: job._id,
                             fileName: fileName,
+                            artwork: getArtworkName(fileName),
                             state: "uploaded",
                         }, callback);
                     }, () => {

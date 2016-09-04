@@ -9,12 +9,12 @@
 <ul class="clusters">
 {{#each clusters}}
     <li class="cluster">
-        {{#each images}}
+        {{#each artworks}}
             <div class="image">
                 <a href="/cluster/{{../_id}}" target="_blank">
-                    <img src="/images/{{.}}.jpg"/>
+                    <img src="{{thumbUrl}}"/>
                 </a>
-                <div class="caption">{{.}}</div>
+                <div class="caption">{{id}}</div>
             </div>
         {{/each}}
     </li>
@@ -27,10 +27,10 @@
 <ul class="clusters">
 {{#each processed}}
     <li class="cluster processed">
-        {{#each images}}
+        {{#each artworks}}
             <div class="image">
-                <img src="/images/{{.}}.jpg"/>
-                <div class="caption">{{.}}</div>
+                <img src="{{thumbUrl}}"/>
+                <div class="caption">{{id}}</div>
             </div>
         {{/each}}
         <div class="process">

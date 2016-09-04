@@ -1,7 +1,7 @@
 <h1>Image Comparison</h1>
 
 <style>
-.comparison .image {
+.comparison .artwork {
     display: inline-block;
     width: 300px;
 }
@@ -26,20 +26,20 @@
 {{/if}}
 
 <div class="comparison">
-    {{#each images}}
-        <div class="image">
-            {{#if image.url}}
-                <a href="{{image.url}}" target="_blank">
-                    <img src="/images/{{image.fileName}}.jpg"/>
+    {{#each artworks}}
+        <div class="artwork">
+            {{#if url}}
+                <a href="{{url}}" target="_blank">
+                    <img src="{{thumbUrl}}"/>
                 </a>
             {{else}}
-                <img src="/images/{{image.fileName}}.jpg"/>
+                <img src="{{thumbUrl}}"/>
             {{/if}}
             <div class="caption">
-                {{#if image.url}}
-                    <a href="{{image.url}}">{{image.fileName}}</a>
+                {{#if url}}
+                    <a href="{{url}}">{{id}}</a>
                 {{else}}
-                    {{image.fileName}}
+                    {{id}}
                 {{/if}}
             </div>
             {{#if data}}
