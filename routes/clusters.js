@@ -1,13 +1,43 @@
 "use strict";
 
+const fs = require("fs");
+const path = require("path");
 const util = require("util");
 
 const mongoose = require("mongoose");
 const express = require("express");
 const router = express.Router();
+const csv = require("csv-streamify");
 
 const Job = mongoose.model("Job");
 const Cluster = mongoose.model("Cluster");
+
+const readDataFile = (callback) => {
+    const dataFile = path.join(process.env.UPLOAD_DIR, "data.csv");
+    const INDEX_FIELD = process.env.DATA_INDEX_FIELD;
+    const results = {};
+
+    fs.stat(dataFile, (err) => {
+        if (err || !INDEX_FIELD) {
+            return callback(null, results);
+        }
+
+        fs.createReadStream(dataFile)
+            .pipe(csv({
+                objectMode: true,
+                delimiter: "\t",
+                newline: "\r\n",
+                columns: true,
+            }))
+            .on("data", (data) => {
+                results[data[INDEX_FIELD]] = data;
+            })
+            .on("error", callback)
+            .on("end", () => {
+                callback(null, results);
+            });
+    });
+};
 
 /* GET view cluster */
 router.get("/:clusterId", (req, res, next) => {
@@ -28,9 +58,19 @@ router.get("/:clusterId", (req, res, next) => {
             cluster.images = cluster.images
                 .sort((a, b) => a.fileName.localeCompare(b.fileName));
 
-            res.render("cluster", {
-                title: "Compare Image Cluster",
-                cluster,
+            readDataFile((err, results) => {
+                const images = [];
+
+                for (const image of cluster.images) {
+                    const data = results[image.fileName] || {};
+                    images.push({image, data});
+                }
+
+                res.render("cluster", {
+                    title: "Compare Image Cluster",
+                    cluster,
+                    images,
+                });
             });
         });
     });

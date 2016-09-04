@@ -126,13 +126,24 @@ router.post("/new", (req, res, next) => {
                         }, callback);
                     }, () => {
                         // Use files array
-                        res.render("complete", {
-                            title: "Upload Completed",
-                            message: "",
-                            existingFiles,
-                        });
+                        res.render("complete", {existingFiles});
                     });
                 });
+            });
+    });
+
+    req.pipe(req.busboy);
+});
+
+/* POST new data upload */
+router.post("/new-data", (req, res, next) => {
+    req.busboy.on("file", (field, file) => {
+        const dataFile = path.join(process.env.UPLOAD_DIR, "data.csv");
+
+        file
+            .pipe(fs.createWriteStream(dataFile))
+            .on("close", () => {
+                res.render("data-complete", {});
             });
     });
 

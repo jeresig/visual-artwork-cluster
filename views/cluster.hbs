@@ -1,27 +1,62 @@
 <h1>Image Comparison</h1>
 
-<div>
-    {{#each cluster.images}}
+<style>
+.comparison .image {
+    display: inline-block;
+    width: 300px;
+}
+
+.comparison img {
+    max-width: 300px;
+}
+
+.comparison th {
+    text-align: right;
+}
+</style>
+
+{{#if cluster.processed}}
+    <p><strong>Already processed.</p>
+{{else}}
+    <div class="process">
+        <form action="/cluster/{{cluster._id}}" method="POST">
+            <p><button type="submit">Mark as Processed</button></p>
+        </form>
+    </div>
+{{/if}}
+
+<div class="comparison">
+    {{#each images}}
         <div class="image">
-            {{#if url}}
-                <a href="{{url}}" target="_blank">
-                    <img src="/images/{{fileName}}.jpg"/>
+            {{#if image.url}}
+                <a href="{{image.url}}" target="_blank">
+                    <img src="/images/{{image.fileName}}.jpg"/>
                 </a>
             {{else}}
-                <img src="/images/{{fileName}}.jpg"/>
+                <img src="/images/{{image.fileName}}.jpg"/>
             {{/if}}
             <div class="caption">
-                {{#if url}}
-                    <a href="{{url}}">{{fileName}}</a>
+                {{#if image.url}}
+                    <a href="{{image.url}}">{{image.fileName}}</a>
                 {{else}}
-                    {{fileName}}
+                    {{image.fileName}}
                 {{/if}}
+            </div>
+            {{#if data}}
+            <div class="data">
+            <form action="/update-data" method="POST">
+                <table>
+                {{#each data}}
+                    <tr>
+                        <th><label for="{{@key}}">{{@key}}:</label></th>
+                        <td><input type="text" name="{{@key}}" value="{{this}}"/></td>
+                    </tr>
+                {{/each}}
+                </table>
+                <input type="submit" value="Update Data"/>
+            </form>
+            {{/if}}
             </div>
         </div>
     {{/each}}
-    <div class="process">
-        <form action="/cluster/{{cluster._id}}" method="POST">
-            <button type="submit">Mark as Processed</button>
-        </form>
-    </div>
 </div>

@@ -1,11 +1,23 @@
 <h1>{{title}}</h1>
 
+<p><strong>Upload Image Zip File</strong></p>
+
 <form action="/job/new" method="POST" enctype="multipart/form-data">
     <input type="file" name="zipFile"/>
     <button type="submit">Upload</button>
     <p class="instructions">
         Please provide a <code>.zip</code> file with <code>.jpg</code> files inside of it.<br/>
         The files should have a unique name corresponding to the specified artwork record.
+    </p>
+</form>
+
+<p><strong>Upload Data TSV File</strong></p>
+
+<form action="/job/new-data" method="POST" enctype="multipart/form-data">
+    <input type="file" name="dataFile"/>
+    <button type="submit">Upload</button>
+    <p class="instructions">
+        Please provide a tab-separated TSV file.
     </p>
 </form>
 
