@@ -90,3 +90,16 @@ a {
 .jobs .job .date {
     font-size: 0.8em;
 }
+
+.comparison .artwork {
+    display: inline-block;
+    width: 300px;
+}
+
+.comparison img {
+    max-width: 300px;
+}
+
+.comparison th {
+    text-align: right;
+}

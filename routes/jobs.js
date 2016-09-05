@@ -18,6 +18,7 @@ router.get("/:jobName", (req, res, next) => {
         .populate("clusters")
         .exec((err, job) => {
             job.date = job.uploadDate.toLocaleDateString();
+            job.completed = job.state === "completed";
 
             async.eachLimit(job.clusters, 2, (cluster, callback) => {
                 cluster.populate("images", callback);

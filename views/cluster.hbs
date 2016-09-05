@@ -1,29 +1,16 @@
+<p><a href="/job/{{cluster.jobId}}">&laquo; Return to batch</a></p>
+
 <h1>Image Comparison</h1>
 
-<style>
-.comparison .artwork {
-    display: inline-block;
-    width: 300px;
-}
-
-.comparison img {
-    max-width: 300px;
-}
-
-.comparison th {
-    text-align: right;
-}
-</style>
-
+<div class="process">
 {{#if cluster.processed}}
-    <p><strong>Already processed.</p>
+    <p><strong>Already processed.</strong></p>
 {{else}}
-    <div class="process">
-        <form action="/cluster/{{cluster._id}}" method="POST">
-            <p><button type="submit">Mark as Processed</button></p>
-        </form>
-    </div>
+    <form action="/cluster/{{cluster._id}}" method="POST">
+        <p><button type="submit">Mark as Processed</button></p>
+    </form>
 {{/if}}
+</div>
 
 <div class="comparison">
     {{#each artworks}}

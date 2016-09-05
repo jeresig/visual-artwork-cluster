@@ -1,6 +1,12 @@
-<h1>Batch: {{job._id}} ({{job.imageCount}} images)</h1>
+<p><a href="/">&laquo; Return to home</a></p>
+
+<h1>Batch: {{job._id}} ({{job.imageCount}} images, {{clusters.length}} clusters)</h1>
 
 <p>Submitted {{job.date}}.</p>
+
+{{#unless job.completed}}
+    <p class="job-processed">Batch is still being loaded...</p>
+{{/unless}}
 
 {{#if job.processed}}
     <p class="job-processed">Entire batch has been processed.</p>
@@ -11,7 +17,7 @@
     <li class="cluster">
         {{#each artworks}}
             <div class="image">
-                <a href="/cluster/{{../_id}}" target="_blank">
+                <a href="/cluster/{{../_id}}">
                     <img src="{{thumbUrl}}"/>
                 </a>
                 <div class="caption">{{id}}</div>
@@ -22,20 +28,19 @@
 </ul>
 
 {{#if processed}}
-<h2>Processed Groups</h2>
+<h2>Processed Clusters</h2>
 
 <ul class="clusters">
 {{#each processed}}
     <li class="cluster processed">
         {{#each artworks}}
             <div class="image">
-                <img src="{{thumbUrl}}"/>
+                <a href="/cluster/{{../_id}}">
+                    <img src="{{thumbUrl}}"/>
+                </a>
                 <div class="caption">{{id}}</div>
             </div>
         {{/each}}
-        <div class="process">
-            <span class="processed">(Already processed.)</span>
-        </div>
     </li>
 {{/each}}
 </ul>

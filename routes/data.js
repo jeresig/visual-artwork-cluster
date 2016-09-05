@@ -47,6 +47,12 @@ router.get("/download", (req, res, next) => {
             });
         }
 
+        if (data.length === 0) {
+            return res.render("error", {
+                message: "No data records to download.",
+            });
+        }
+
         const oldID = `__old_${process.env.DATA_ARTWORK_FIELD}`;
         const keys = Object.keys(data[0].toJSON().data);
         const header = [oldID].concat(keys).join(Data.getFieldSeparator());
