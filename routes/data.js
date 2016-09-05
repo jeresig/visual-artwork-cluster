@@ -10,7 +10,7 @@ const Data = mongoose.model("Data");
 const urlencodedParser = bodyParser.urlencoded({extended: true});
 
 /* POST new data upload */
-router.post("/new-data-file", (req, res, next) => {
+router.post("/upload", (req, res, next) => {
     req.busboy.on("file", (field, file) => {
         Data.writeDataFile(file, () => {
             res.render("data-complete", {});
@@ -21,7 +21,7 @@ router.post("/new-data-file", (req, res, next) => {
 });
 
 /* POST update existing data record */
-router.post("/update-data", urlencodedParser, (req, res, next) => {
+router.post("/update", urlencodedParser, (req, res, next) => {
     Data.update(
         {_id: req.body.id},
         {data: req.body.data},
@@ -36,6 +36,30 @@ router.post("/update-data", urlencodedParser, (req, res, next) => {
             res.redirect(`/cluster/${req.body.cluster}`);
         }
     );
+});
+
+/* GET download data changes */
+router.get("/download", (req, res, next) => {
+    Data.find({}, (err, data) => {
+        if (err) {
+            return res.render("error", {
+                message: "Error downloading data records.",
+            });
+        }
+
+        const oldID = `__old_${process.env.DATA_ARTWORK_FIELD}`;
+        const keys = Object.keys(data[0].toJSON().data);
+        const header = [oldID].concat(keys).join(Data.getFieldSeparator());
+        const lines = data
+            .map((record) => [record._id].concat(
+                keys.map((key) => record.data[key]))
+                .join(Data.getFieldSeparator()));
+
+        res.set("Content-Type", "application/octet-stream");
+        res.set("Content-Disposition",
+            "attachment;filename=revised-data.tsv");
+        res.send([header].concat(lines).join(Data.getRecordSeparator()));
+    });
 });
 
 module.exports = router;

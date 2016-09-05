@@ -20,7 +20,20 @@ const loadModifiedData = (results, callback) => {
     });
 };
 
+const clean = (str) => str
+    .replace(/\\t/g, "\t")
+    .replace(/\\r/g, "\r")
+    .replace(/\\n/g, "\n");
+
 Data.statics = {
+    getFieldSeparator() {
+        return clean(process.env.DATA_FIELD_SEPARATOR);
+    },
+
+    getRecordSeparator() {
+        return clean(process.env.DATA_RECORD_SEPARATOR);
+    },
+
     getChangedData(callback) {
         const results = {};
         loadModifiedData(results, callback);
@@ -39,8 +52,8 @@ Data.statics = {
             fs.createReadStream(dataFile)
                 .pipe(csv({
                     objectMode: true,
-                    delimiter: "\t",
-                    newline: "\r\n",
+                    delimiter: this.getFieldSeparator(),
+                    newline: this.getRecordSeparator(),
                     columns: true,
                 }))
                 .on("data", (data) => {

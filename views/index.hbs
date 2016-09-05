@@ -13,13 +13,15 @@
 
 <p><strong>Upload Data TSV File</strong></p>
 
-<form action="/data/new-data-file" method="POST" enctype="multipart/form-data">
+<form action="/data/upload" method="POST" enctype="multipart/form-data">
     <input type="file" name="dataFile"/>
     <button type="submit">Upload</button>
     <p class="instructions">
         Please provide a tab-separated TSV file.
     </p>
 </form>
+
+<p><strong><a href="/data/download">Download Data TSV File</a></strong></p>
 
 {{#if jobs}}
     <h2>Batches</h2>
