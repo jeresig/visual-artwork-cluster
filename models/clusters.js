@@ -4,6 +4,10 @@ const util = require("util");
 
 const mongoose = require("mongoose");
 
+const ARTWORK_URL = process.env.ARTWORK_URL;
+const ARTWORK_IMAGE_URL = process.env.ARTWORK_IMAGE_URL;
+const ARTWORK_THUMB_URL = process.env.ARTWORK_THUMB_URL;
+
 const Cluster = new mongoose.Schema({
     jobId: {type: String, ref: "Job"},
     images: [{type: String, ref: "Image"}],
@@ -11,17 +15,24 @@ const Cluster = new mongoose.Schema({
     processed: Boolean,
 });
 
-const ARTWORK_URL = process.env.ARTWORK_URL;
-const ARTWORK_IMAGE_URL = process.env.ARTWORK_IMAGE_URL;
-const ARTWORK_THUMB_URL = process.env.ARTWORK_THUMB_URL;
+Cluster.methods = {
+    addImage(image) {
+        this.images.push(image);
+        this.imageCount += 1;
+    },
+};
 
 Cluster
     .virtual("artworks")
     .get(function() {
+        const Image = mongoose.model("Image");
         const artworks = {};
 
         for (const image of this.images) {
-            artworks[image.artwork] = true;
+            const artworkID = typeof image === "string" ?
+                Image.getArtworkName(image) :
+                image.artwork;
+            artworks[artworkID] = true;
         }
 
         return Object.keys(artworks).sort().map((id) => ({

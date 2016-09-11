@@ -17,10 +17,11 @@
     "debug": "2.2.0",
     "dotenv": "2.0.0",
     "express": "4.14.0",
+    "farmhash": "^1.1.1",
     "hbs": "4.0.0",
-    "matchengine": "0.0.4",
     "mongoose": "4.5.8",
     "morgan": "1.7.0",
+    "pastec": "0.0.5",
     "unzip2": "0.2.5"
   }
 }

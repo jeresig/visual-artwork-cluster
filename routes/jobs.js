@@ -106,12 +106,6 @@ router.post("/new", (req, res, next) => {
                     });
                 }
 
-                const artworkRegex = process.env.ARTWORK_ID_REGEX || "([^.]*)";
-                const artworkIDRegex = new RegExp(artworkRegex, "i");
-
-                const getArtworkName = (fileName) =>
-                    artworkIDRegex.exec(fileName)[1];
-
                 Job.create({
                     _id: jobName,
                     state: "extractEntropy",
@@ -133,7 +127,6 @@ router.post("/new", (req, res, next) => {
                             _id: fileName,
                             jobId: job._id,
                             fileName: fileName,
-                            artwork: getArtworkName(fileName),
                             state: "uploaded",
                         }, callback);
                     }, () => {

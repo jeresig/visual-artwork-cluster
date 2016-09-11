@@ -1,15 +1,16 @@
 "use strict";
 
+const fs = require("fs");
 const path = require("path");
 const {exec} = require("child_process");
 
 require("dotenv").load();
 
 const async = require("async");
+const farmhash = require("farmhash");
 const mongoose = require("mongoose");
-const ME = require("matchengine")({
-    username: process.env.ME_USERNAME,
-    password: process.env.ME_PASSWORD,
+const pastec = require("pastec")({
+    server: process.env.PASTEC_SERVER,
 });
 
 // Connect to database
@@ -23,15 +24,28 @@ require("./models/images");
 
 const Job = mongoose.model("Job");
 const Cluster = mongoose.model("Cluster");
+const Image = mongoose.model("Image");
 
 const MIN_ENTROPY = parseFloat(process.env.MIN_ENTROPY) || 0;
+const MIN_SIMILARITY = parseFloat(process.env.MIN_SIMILARITY) || 0;
+
+const hashImage = (sourceFile, callback) => {
+    fs.readFile(sourceFile, (err, buffer) => {
+        /* istanbul ignore if */
+        if (err) {
+            return callback(err);
+        }
+
+        callback(null, farmhash.hash32(buffer).toString());
+    });
+};
 
 const cmds = {
     // Extract the entropy details for the images
     extractEntropy(job, callback) {
         if (MIN_ENTROPY === 0) {
             return process.nextTick(() => {
-                job.state = "uploadME";
+                job.state = "uploadSimilar";
                 callback();
             });
         }
@@ -53,125 +67,140 @@ const cmds = {
                     image.entropy = parseFloat(RegExp.$1);
                 }
 
+                if (image.entropy < MIN_ENTROPY) {
+                    image.state = "completed";
+                }
+
                 image.save(callback);
             });
-        }, (err) => {
-            job.state = "uploadME";
+        }, () => {
+            job.state = "uploadSimilar";
             callback();
         });
     },
 
-    // Upload the data to MatchEngine
-    uploadME(job, callback) {
-        const groups = [];
-        const batchSize = 100;
-        const pause = 5000;
-        let count = 1;
-        const ME_DIR = process.env.ME_DIR;
-
-        console.log("Downloading existing file list...");
-
-        ME.list((err, meFiles) => {
-            const filteredImages = job.images
-                .filter((image) =>
-                    meFiles.indexOf(`${ME_DIR}/${image._id}.jpg`) < 0)
-                .filter((image) => image.entropy >= MIN_ENTROPY);
-
-            // Group the images into batches to upload
-            for (let i = 0; i < filteredImages.length; i += batchSize) {
-                groups.push(filteredImages.slice(i, i + batchSize));
+    // Upload the data to Pastec
+    uploadSimilar(job, callback) {
+        async.eachSeries(job.images, (image, callback) => {
+            if (image.state === "completed" || image.similarityId) {
+                return process.nextTick(callback);
             }
 
-            async.eachSeries(groups, (images, callback) => {
-                console.log(`Uploading batch [${count}/${groups.length}]`);
+            console.log(`Uploading to similarity engine: ${image._id}...`);
 
-                const files = images.map((image) =>
-                    path.join(process.env.UPLOAD_DIR, `${image._id}.jpg`));
+            const file = path.join(process.env.UPLOAD_DIR, `${image._id}.jpg`);
 
-                ME.add(files, process.env.ME_DIR, (err) => {
-                    console.log(`Batch done #${count}`);
-                    count += 1;
+            hashImage(file, (err, similarityId) => {
+                if (err) {
+                    return callback(err);
+                }
 
-                    // Update all the images, marking them as completed
-                    async.eachLimit(images, 4, (image, callback) => {
-                        image.update({state: "completed"}, callback);
-                    }, () => {
-                        console.log("Image records updated.");
+                pastec.idIndexed(similarityId, (err, indexed) => {
+                    if (err) {
+                        return callback(err);
+                    }
 
-                        // Pause at the end of each upload
-                        setTimeout(callback, pause);
+                    if (indexed) {
+                        return image.update({similarityId}, callback);
+                    }
+
+                    pastec.add(file, similarityId, (err) => {
+                        if (err) {
+                            return callback(err);
+                        }
+
+                        image.update({similarityId}, callback);
                     });
                 });
-            }, () => {
-                job.state = "similarityME";
-                callback();
             });
+        }, () => {
+            job.state = "downloadSimilarity";
+            callback();
         });
     },
 
-    similarityME(job, callback) {
-        const clusters = [];
-        const clusterMap = {};
-
-        const artworkRegex = process.env.ARTWORK_ID_REGEX || "([^.]*)";
-        const artworkIDRegex = new RegExp(artworkRegex, "i");
-
+    downloadSimilarity(job, callback) {
         console.log("Downloading similarity data...");
 
-        // If we have a artwork cluster then we make sure we cluster
-        // by the artwork ID rather than just the file name. This
-        // will help to ensure that all images depicting the same
-        // artwork will be put together.
-        const getClusterName = (fileName) =>
-            artworkIDRegex.exec(fileName)[1];
-
-        const images = job.images
-            .filter((image) => image.entropy >= MIN_ENTROPY);
-
         // Download similarity data
-        async.eachLimit(images, 4, (image, callback) => {
-            const ME_DIR = process.env.ME_DIR;
-            const filePath = `${ME_DIR}/${image._id}.jpg`;
+        async.eachSeries(job.images, (image, callback) => {
+            //if (image.state === "completed") {
+            if (image.entropy < MIN_ENTROPY) {
+                return process.nextTick(callback);
+            }
 
             console.log(`Downloading similarity for ${image._id}...`);
 
-            ME.similar(filePath, (err, matches) => {
-                let curCluster;
+            pastec.similar(image.similarityId, (err, similarMatches) => {
+                if (err) {
+                    return callback(err);
+                }
 
-                matches = matches.map((match) => {
-                    // If some other file was matched we just ignore it
-                    if (match.filepath.indexOf(ME_DIR) !== 0) {
-                        return;
+                async.map(similarMatches, (match, callback) => {
+                    Image.findOne({similarityId: match.id}, (err, image) => {
+                        callback(err, {
+                            image: image._id,
+                            score: match.score,
+                        });
+                    });
+                }, (err, similarImages) => {
+                    if (err) {
+                        return callback(err);
                     }
 
-                    const fileName = /([^\/]+)\.jpg$/.exec(match.filepath)[1];
-                    const clusterName = getClusterName(fileName);
+                    image.state = "completed";
+                    image.similarImages = similarImages
+                        .filter((similarImage) => similarImage);
 
-                    if (clusterName in clusterMap) {
-                        const otherCluster = clusterMap[clusterName];
+                    image.save(callback);
+                });
+            });
+        }, () => {
+            job.state = "cluster";
+            callback();
+        });
+    },
+
+    cluster(job, callback) {
+        const clusters = {};
+
+        console.log("Generating clusters...");
+
+        async.eachLimit(job.images, 4, (image, callback) => {
+            if (image.similarImages.length <= 1 ||
+                    image.similarArtworks.length >= 4) {
+                return process.nextTick(callback);
+            }
+
+            image.populate("similarImages.image", () => {
+                let curCluster;
+                const similarImages = image.similarImages
+                    .filter((similar) => similar.score >= MIN_SIMILARITY);
+
+                for (const similarImage of similarImages) {
+                    const image = similarImage.image;
+                    const clusterName = image.artwork;
+
+                    if (clusterName in clusters) {
+                        const otherCluster = clusters[clusterName];
 
                         if (curCluster && curCluster !== otherCluster) {
                             // Multiple clusters found!
                             for (const image of otherCluster.images) {
-                                curCluster.images.push(image);
-                                curCluster.imageCount += 1;
+                                curCluster.addImage(image);
                             }
 
-                            // Remove the old cluster
-                            delete clusterMap[clusterName];
-
-                            const pos = clusters.indexOf(otherCluster);
-                            clusters.splice(pos, 1);
+                            // Delete the old cluster
+                            delete clusters[clusterName];
                         } else {
                             curCluster = otherCluster;
                         }
                     }
+                }
 
-                    return fileName;
-                }).filter((fileName) => fileName);
-
-                for (const fileName of matches) {
-                    const clusterName = getClusterName(fileName);
+                for (const similarImage of similarImages) {
+                    const image = similarImage.image;
+                    const clusterName = image.artwork;
 
                     if (!curCluster) {
                         curCluster = new Cluster({
@@ -179,13 +208,11 @@ const cmds = {
                             imageCount: 0,
                         });
 
-                        clusters.push(curCluster);
-                        clusterMap[clusterName] = curCluster;
+                        clusters[clusterName] = curCluster;
                     }
 
-                    if (curCluster.images.indexOf(fileName) < 0) {
-                        curCluster.images.push(fileName);
-                        curCluster.imageCount += 1;
+                    if (curCluster.images.indexOf(image) < 0) {
+                        curCluster.addImage(image);
                     }
                 }
 
@@ -194,44 +221,24 @@ const cmds = {
         }, () => {
             console.log("Saving clusters...");
 
+            const finalClusters = [];
+            const clusterList = Object.keys(clusters)
+                .map((clusterName) => clusters[clusterName]);
+
             // Save all clusters
-            async.eachLimit(clusters, 4, (cluster, callback) => {
-                // Ignore clusters that only match a single image
-                if (cluster.images.length === 1) {
+            async.eachLimit(clusterList, 4, (cluster, callback) => {
+                // Ignore clusters that only match a single artwork
+                if (cluster.artworks.length === 1) {
                     return process.nextTick(callback);
                 }
 
-                // If there is an artwork ID check then we need to make sure
-                // that there are multiple valid image IDs, otherwise we just
-                // ignore the cluster (as if the IDs are all the same then
-                // nothing new is being discovered)
-                const artworkIDs = {};
-
-                for (const fileName of cluster.images) {
-                    const clusterName = getClusterName(fileName);
-                    artworkIDs[clusterName] = true;
-                }
-
-                if (Object.keys(artworkIDs).length === 1) {
-                    return process.nextTick(callback);
-                }
+                finalClusters.push(cluster);
 
                 cluster.images = cluster.images.sort();
                 cluster.save(callback);
             }, () => {
-                console.log("Saving job...");
-
-                let processed = true;
-
-                job.clusters = clusters.map((cluster) => {
-                    if (!cluster.processed) {
-                        processed = false;
-                    }
-
-                    return cluster._id;
-                });
-
-                job.processed = processed;
+                job.clusters = finalClusters.map((cluster) => cluster._id);
+                job.processed = (finalClusters.length === 0);
                 job.state = "completed";
                 callback();
             });
