@@ -13,7 +13,10 @@ const urlencodedParser = bodyParser.urlencoded({extended: true});
 router.post("/upload", (req, res, next) => {
     req.busboy.on("file", (field, file) => {
         Data.writeDataFile(file, () => {
-            res.render("data-complete", {});
+            // Remove all existing data modifications on upload
+            Data.remove({}, () => {
+                res.render("data-complete", {});
+            });
         });
     });
 
