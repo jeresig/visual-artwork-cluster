@@ -41,9 +41,12 @@ router.post("/update", urlencodedParser, (req, res, next) => {
     );
 });
 
+const formatLine = (line) =>
+    line.map((field) => `"${field}"`).join(",");
+
 /* GET download data changes */
 router.get("/download", (req, res, next) => {
-    Data.find({}, (err, data) => {
+    Data.getData((err, data) => {
         if (err) {
             return res.render("error", {
                 message: "Error downloading data records.",
@@ -56,18 +59,38 @@ router.get("/download", (req, res, next) => {
             });
         }
 
-        const oldID = `__old_${process.env.DATA_ARTWORK_FIELD}`;
-        const keys = Object.keys(data[0].toJSON().data);
-        const header = [oldID].concat(keys).join(Data.getFieldSeparator());
-        const lines = data
-            .map((record) => [record._id].concat(
-                keys.map((key) => record.data[key]))
-                .join(Data.getFieldSeparator()));
+        Data.getModifiedData((err, modified) => {
+            if (err) {
+                return res.render("error", {
+                    message: "Error downloading data records.",
+                });
+            }
 
-        res.set("Content-Type", "application/octet-stream");
-        res.set("Content-Disposition",
-            "attachment;filename=revised-data.tsv");
-        res.send([header].concat(lines).join(Data.getRecordSeparator()));
+            const ARTWORK_FIELD = process.env.DATA_ARTWORK_FIELD;
+            const FIXED_FIELD = process.env.DATA_FIXED_FIELD;
+            const fields = Object.keys(data[0])
+                .filter((field) => field !== FIXED_FIELD);
+            const header = [FIXED_FIELD].concat(fields);
+
+            for (const field of fields) {
+                if (field !== FIXED_FIELD) {
+                    header.push(`Old_${field}`);
+                }
+            }
+
+            const lines = data.map((record) => {
+                const artworkID = record[ARTWORK_FIELD];
+                const modifiedData = modified[artworkID] || record;
+                return [record[FIXED_FIELD]]
+                    .concat(fields.map((key) => modifiedData[key]))
+                    .concat(fields.map((key) => record[key]));
+            });
+
+            res.set("Content-Type", "application/octet-stream");
+            res.set("Content-Disposition",
+                "attachment;filename=revised-data.csv");
+            res.send([header].concat(lines).map(formatLine).join("\n"));
+        });
     });
 });
 

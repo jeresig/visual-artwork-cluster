@@ -11,15 +11,6 @@ const Data = new mongoose.Schema({
     data: Object,
 });
 
-const loadModifiedData = (results, callback) => {
-    mongoose.model("Data").find({}, (err, records) => {
-        for (const record of records) {
-            results[record._id] = record.data;
-        }
-        callback(err, results);
-    });
-};
-
 const clean = (str) => str
     .replace(/\\t/g, "\t")
     .replace(/\\r/g, "\r")
@@ -34,18 +25,12 @@ Data.statics = {
         return clean(process.env.DATA_RECORD_SEPARATOR);
     },
 
-    getChangedData(callback) {
-        const results = {};
-        loadModifiedData(results, callback);
-    },
-
     getData(callback) {
         const dataFile = path.join(process.env.UPLOAD_DIR, "data.csv");
-        const ARTWORK_FIELD = process.env.DATA_ARTWORK_FIELD;
-        const results = {};
+        const results = [];
 
         fs.stat(dataFile, (err) => {
-            if (err || !ARTWORK_FIELD) {
+            if (err) {
                 return callback(null, results);
             }
 
@@ -57,12 +42,41 @@ Data.statics = {
                     columns: true,
                 }))
                 .on("data", (data) => {
-                    results[data[ARTWORK_FIELD]] = data;
+                    results.push(data);
                 })
                 .on("error", callback)
                 .on("end", () => {
-                    loadModifiedData(results, callback);
+                    callback(null, results);
                 });
+        });
+    },
+
+    getDataByArtwork(callback) {
+        const ARTWORK_FIELD = process.env.DATA_ARTWORK_FIELD;
+        const results = {};
+
+        this.getData((err, records) => {
+            if (err) {
+                return callback(err);
+            }
+
+            for (const record of records) {
+                results[record[ARTWORK_FIELD]] = record;
+            }
+
+            callback(null, results);
+        });
+    },
+
+    getModifiedData(callback) {
+        this.find({}, (err, records) => {
+            const results = {};
+
+            for (const record of records) {
+                results[record._id] = record.data;
+            }
+
+            callback(err, results);
         });
     },
 

@@ -11,20 +11,26 @@ const Data = mongoose.model("Data");
 /* GET view cluster */
 router.get("/:clusterId", (req, res, next) => {
     const clusterId = req.params.clusterId;
+    const FIXED_FIELD = process.env.DATA_FIXED_FIELD;
 
     Cluster.findById(clusterId, (err, cluster) => {
         cluster.populate("images", () => {
-            Data.getData((err, data) => {
-                const artworks = cluster.artworks;
+            Data.getDataByArtwork((err, data) => {
+                Data.getModifiedData((err, modified) => {
+                    Object.assign(data, modified);
 
-                for (const artwork of artworks) {
-                    artwork.data = data[artwork.id];
-                }
+                    const artworks = cluster.artworks;
 
-                res.render("cluster", {
-                    title: "Compare Image Cluster",
-                    cluster,
-                    artworks,
+                    for (const artwork of artworks) {
+                        artwork.data = data[artwork.id];
+                        delete artwork.data[FIXED_FIELD];
+                    }
+
+                    res.render("cluster", {
+                        title: "Compare Image Cluster",
+                        cluster,
+                        artworks,
+                    });
                 });
             });
         });
