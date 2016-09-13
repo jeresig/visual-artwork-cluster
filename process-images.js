@@ -28,6 +28,7 @@ const Image = mongoose.model("Image");
 
 const MIN_ENTROPY = parseFloat(process.env.MIN_ENTROPY) || 0;
 const MIN_SIMILARITY = parseFloat(process.env.MIN_SIMILARITY) || 0;
+const IDENTIFY_BINARY = process.env.IDENTIFY_BINARY || "identify";
 
 const hashImage = (sourceFile, callback) => {
     fs.readFile(sourceFile, (err, buffer) => {
@@ -58,7 +59,7 @@ const cmds = {
             console.log(`Getting entropy for ${image._id}...`);
 
             const file = path.join(process.env.UPLOAD_DIR, `${image._id}.jpg`);
-            exec(`identify -verbose ${file}`, (err, output) => {
+            exec(`${IDENTIFY_BINARY} -verbose ${file}`, (err, output) => {
                 image.entropy = 0;
 
                 // This could fail if the image is greyscale
