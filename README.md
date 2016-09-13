@@ -1,6 +1,6 @@
 # Visual Artwork Cluster
 
-This is a web application that uses Pastec to cluster batches of images together to aide in the process of cataloging digitized images.
+This is a web application that uses [Pastec](http://pastec.io/) to cluster batches of images together to aide in the process of cataloging digitized images.
 
 # How to Use
 
@@ -14,8 +14,12 @@ Images will be clustered into groups of near-identical images. This is done such
 
 [See INSTALL.md](INSTALL.md)
 
-# Running the Service
+# Running the Tool
 
-At this point you should be able to start the service running. This can be handled using a number of utilities, such naught or supervisor, or you can just run it directly using:
+To run the tool you can execute the following:
 
-    node bin/www
+```
+npm start
+```
+
+The server should be available on the port that you specified, or 3000 by default. Make sure that Mongodb and Pastec are also running.
