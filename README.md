@@ -10,6 +10,8 @@ Once a batch of images have been uploaded they will begin to be processed. First
 
 Images will be clustered into groups of near-identical images. This is done such that a cataloger can go through and catalog the images as representing the same artwork (or different, but similar, artworks - as the case may be) in their database. An additional button "Mark as processed" is provided such that a cataloger can mark a cluster of images as having been processed in their database, so that they won't accidentally re-visit them again.
 
+You'll also be able to upload metadata to associate with artwork records. This metadata will be shown with the artworks and you'll be able to make edits and download the changes (via the link on the tool's homepage).
+
 # Installation
 
 [See INSTALL.md](INSTALL.md)
