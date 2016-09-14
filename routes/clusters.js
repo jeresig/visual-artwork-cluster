@@ -22,8 +22,11 @@ router.get("/:clusterId", (req, res, next) => {
                     const artworks = cluster.artworks;
 
                     for (const artwork of artworks) {
-                        artwork.data = data[artwork.id];
-                        delete artwork.data[FIXED_FIELD];
+                        // TODO: Capture when this fails!
+                        if (data[artwork.id]) {
+                            artwork.data = data[artwork.id];
+                            delete artwork.data[FIXED_FIELD];
+                        }
                     }
 
                     res.render("cluster", {
