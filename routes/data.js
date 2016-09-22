@@ -66,11 +66,17 @@ router.get("/download", (req, res, next) => {
                 });
             }
 
+            if (modified.length === 0) {
+                return res.render("error", {
+                    message: "No data has been updated.",
+                });
+            }
+
             const ARTWORK_FIELD = process.env.DATA_ARTWORK_FIELD;
             const FIXED_FIELD = process.env.DATA_FIXED_FIELD;
             const fields = Object.keys(data[0])
                 .filter((field) => field !== FIXED_FIELD);
-            const header = [FIXED_FIELD].concat(fields);
+            const header = [FIXED_FIELD, "Notes"].concat(fields);
 
             for (const field of fields) {
                 if (field !== FIXED_FIELD) {
@@ -80,11 +86,14 @@ router.get("/download", (req, res, next) => {
 
             const lines = data.map((record) => {
                 const artworkID = record[ARTWORK_FIELD];
-                const modifiedData = modified[artworkID] || record;
-                return [record[FIXED_FIELD]]
-                    .concat(fields.map((key) => modifiedData[key]))
-                    .concat(fields.map((key) => record[key]));
-            });
+                const modifiedData = modified[artworkID];
+
+                if (modifiedData) {
+                    return [record[FIXED_FIELD], modifiedData.notes]
+                        .concat(fields.map((key) => modifiedData[key]))
+                        .concat(fields.map((key) => record[key]));
+                }
+            }).filter((line) => line);
 
             res.set("Content-Type", "application/octet-stream");
             res.set("Content-Disposition",

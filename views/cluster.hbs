@@ -41,6 +41,10 @@
                         <td><input type="text" name="data[{{@key}}]" value="{{this}}"/></td>
                     </tr>
                 {{/each}}
+                <tr>
+                    <th>Notes:</th>
+                    <td><textarea name="data[notes]">{{notes}}</textarea></td>
+                </tr>
                 </table>
                 <input type="submit" value="Update Data"/>
             </form>

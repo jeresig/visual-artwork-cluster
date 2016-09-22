@@ -25,7 +25,9 @@ router.get("/:clusterId", (req, res, next) => {
                         // TODO: Capture when this fails!
                         if (data[artwork.id]) {
                             artwork.data = data[artwork.id];
+                            artwork.notes = data[artwork.id].notes;
                             delete artwork.data[FIXED_FIELD];
+                            delete artwork.data.notes;
                         }
                     }
 
