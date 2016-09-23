@@ -5,6 +5,7 @@ const router = express.Router();
 const mongoose = require("mongoose");
 
 const Job = mongoose.model("Job");
+const Data = mongoose.model("Data");
 
 /* GET home page. */
 router.get("/", (req, res, next) => {
@@ -14,9 +15,12 @@ router.get("/", (req, res, next) => {
             job.completed = job.state === "completed";
         });
 
-        res.render("index", {
-            title: "Visual Artwork Cluster",
-            jobs,
+        Data.count((err, totalModified) => {
+            res.render("index", {
+                title: "Visual Artwork Cluster",
+                jobs,
+                totalModified,
+            });
         });
     });
 });

@@ -18,10 +18,15 @@
     <button type="submit">Upload</button>
     <p class="instructions">
         Please provide a tab-separated TSV file.
+        {{#if totalModified}}
+            <br/>Warning: This will replace {{totalModified}} modified record(s).
+        {{/if}}
     </p>
 </form>
 
-<p><strong><a href="/data/download">Download Data CSV File</a></strong></p>
+{{#if totalModified}}
+<p><strong><a href="/data/download">Download Modified Data CSV File ({{totalModified}} records)</a></strong></p>
+{{/if}}
 
 {{#if jobs}}
     <h2>Batches</h2>
