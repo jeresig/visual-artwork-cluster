@@ -89,7 +89,7 @@ router.get("/download", (req, res, next) => {
                 const modifiedData = modified[artworkID];
 
                 if (modifiedData) {
-                    return [record[FIXED_FIELD], modifiedData.notes]
+                    return [record[FIXED_FIELD], modifiedData.notes || ""]
                         .concat(fields.map((key) => modifiedData[key]))
                         .concat(fields.map((key) => record[key]));
                 }
