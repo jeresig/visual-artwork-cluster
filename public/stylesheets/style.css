@@ -96,6 +96,16 @@ a {
     width: 300px;
 }
 
+.comparison .artwork .caption {
+    text-align: center;
+    font-size: 18px;
+    margin-bottom: 18px;
+}
+
+.comparison .artwork .caption label {
+    font-size: 12px;
+}
+
 .comparison img {
     max-width: 300px;
 }

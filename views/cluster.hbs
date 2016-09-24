@@ -14,7 +14,7 @@
 
 <div class="comparison">
     {{#each artworks}}
-        <div class="artwork">
+        <div class="artwork" id="{{id}}">
             {{#if url}}
                 <a href="{{url}}" target="_blank">
                     <img src="{{thumbUrl}}"/>
@@ -28,6 +28,11 @@
                 {{else}}
                     {{id}}
                 {{/if}}
+                <br/>
+                <label>
+                    <input type="radio" name="copyThis" value="{{id}}" {{#if @first}}checked{{/if}}/>
+                    Copy from this record.
+                </label>
             </div>
             {{#if data}}
             <div class="data">
@@ -38,7 +43,10 @@
                 {{#each data}}
                     <tr>
                         <th>{{@key}}:</th>
-                        <td><input type="text" name="data[{{@key}}]" value="{{this}}"/></td>
+                        <td>
+                            <input type="text" name="data[{{@key}}]" class="data[{{@key}}]" value="{{this}}"/>
+                            <button class="paste" data-copy-from="data[{{@key}}]" type="button">&laquo; Paste</button>
+                        </td>
                     </tr>
                 {{/each}}
                 <tr>
@@ -46,10 +54,33 @@
                     <td><textarea name="data[notes]">{{notes}}</textarea></td>
                 </tr>
                 </table>
-                <input type="submit" value="Update Data"/>
+                <center>
+                    <input type="submit" value="Update Record Data"/>
+                </center>
             </form>
             {{/if}}
             </div>
         </div>
     {{/each}}
 </div>
+
+<script>
+var copyElem = function() {
+    var radios = document.getElementsByName("copyThis");
+    for (var i = 0; i < radios.length; i++) {
+        if (radios[i].checked) {
+            return document.getElementById(radios[i].value);
+        }
+    }
+};
+
+var paste = document.getElementsByClassName("paste");
+for (var i = 0; i < paste.length; i++) (function(elem) {
+    elem.addEventListener("click", function() {
+        var fieldName = elem.getAttribute("data-copy-from");
+        var copyField = copyElem().getElementsByClassName(fieldName)[0];
+        var pasteField = elem.parentNode.getElementsByClassName(fieldName)[0];
+        pasteField.value = copyField.value;
+    });
+})(paste[i]);
+</script>
